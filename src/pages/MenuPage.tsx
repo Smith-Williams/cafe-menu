@@ -10,6 +10,7 @@ import {
   type CategoryDisplay,
 } from '../lib/normalizeCategory'
 import { AddToCartButton } from '../components/AddToCartButton'
+import { MenuItemImage } from '../components/MenuItemImage'
 
 export function MenuPage() {
   const { addItem } = useCart()
@@ -112,14 +113,14 @@ export function MenuPage() {
           ) : (
             <div className="menu-grid">
               {visibleItems.map((item) => (
-                <article key={item.id} className="menu-card">
-                  <div className="menu-card-image">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt="" loading="lazy" />
-                    ) : (
-                      <span aria-hidden>☕</span>
-                    )}
-                  </div>
+                <article
+                  key={item.id || `${item.category_id}-${item.name_ar}`}
+                  className="menu-card"
+                >
+                  <MenuItemImage
+                    src={item.image_url}
+                    alt={item.name_ar || 'صورة المنتج'}
+                  />
                   <div className="menu-card-body">
                     <h3 className="menu-card-title">
                       {item.name_ar || 'عنصر بدون اسم'}

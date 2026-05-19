@@ -553,16 +553,27 @@ export function AdminDashboard() {
                 />
               </label>
               <label>
-                رابط صورة (اختياري)
+                رابط الصورة (image_url)
                 <input
                   type="url"
                   value={itemDraft.image_url}
                   onChange={(e) =>
                     setItemDraft((d) => ({ ...d, image_url: e.target.value }))
                   }
-                  placeholder="https://…"
+                  placeholder="https://example.com/photo.jpg"
                 />
               </label>
+              {itemDraft.image_url.trim() ? (
+                <div className="image-preview">
+                  <img
+                    src={itemDraft.image_url.trim()}
+                    alt="معاينة الصورة"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+              ) : null}
               <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
                 <input
                   type="checkbox"
