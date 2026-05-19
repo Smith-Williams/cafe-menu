@@ -180,16 +180,21 @@ button:disabled {
 }
 
 .tab {
-  padding: 0.45rem 0.95rem;
+  padding: 0.5rem 1rem;
+  min-height: 2.35rem;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted);
+  color: var(--text);
   font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
   transition:
     background 0.15s,
     color 0.15s,
-    border-color 0.15s;
+    border-color 0.15s,
+    transform 0.12s;
 }
 
 .tab:hover {
@@ -197,10 +202,197 @@ button:disabled {
   border-color: rgba(201, 168, 124, 0.45);
 }
 
+.tab:not(.active) {
+  color: var(--text-muted);
+}
+
 .tab.active {
   background: rgba(201, 168, 124, 0.18);
   color: var(--text);
   border-color: rgba(201, 168, 124, 0.5);
+}
+
+.tab__label {
+  display: inline-block;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Cart added toast */
+.cart-toast {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.1rem;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--success) 0%, #6a9a6a 100%);
+  color: #0f1a0f;
+  font-weight: 600;
+  font-size: 0.92rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(143, 188, 143, 0.5);
+  animation: toast-in 0.35s ease;
+  cursor: pointer;
+  max-width: min(92vw, 420px);
+}
+
+.cart-toast__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+  font-size: 0.85rem;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Add to cart feedback */
+.btn-add-cart {
+  min-width: 7.5rem;
+  transition:
+    transform 0.2s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.btn-add-cart__label {
+  display: inline-block;
+}
+
+.btn-add-cart--success {
+  background: linear-gradient(180deg, var(--success) 0%, #6a9a6a 100%) !important;
+  color: #0f1a0f !important;
+  border-color: rgba(143, 188, 143, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(143, 188, 143, 0.25);
+  animation: cart-added-pulse 0.55s ease;
+}
+
+@keyframes cart-added-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Admin orders */
+.orders-count {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.1rem;
+}
+
+.order-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.order-card__head strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.order-card__phone {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.order-card__meta {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-end;
+}
+
+.order-card__time {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.order-status {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(201, 168, 124, 0.15);
+  color: var(--accent);
+}
+
+.order-status--pending {
+  background: rgba(201, 168, 124, 0.2);
+}
+
+.order-card__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px dashed var(--border);
+  padding-top: 0.65rem;
+}
+
+.order-card__items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  font-size: 0.92rem;
+}
+
+.order-card__notes {
+  margin: 0.65rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.order-card__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
 }
 
 .menu-grid {

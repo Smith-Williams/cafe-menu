@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Category, MenuItem } from '../types/database'
+import type { MenuItem } from '../types/database'
 import { useCart } from '../context/CartContext'
 import { formatMoney } from '../lib/format'
 import { normalizeItems } from '../lib/normalizeItem'
+import {
+  getCategoryLabel,
+  normalizeCategories,
+  type CategoryDisplay,
+} from '../lib/normalizeCategory'
+import { AddToCartButton } from '../components/AddToCartButton'
 
 export function MenuPage() {
   const { addItem } = useCart()
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<CategoryDisplay[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +46,7 @@ export function MenuPage() {
         return
       }
 
-      setCategories(catRes.data ?? [])
+      setCategories(normalizeCategories(catRes.data ?? []))
       setItems(normalizeItems(itemRes.data ?? []))
       setLoading(false)
     }
@@ -94,7 +100,7 @@ export function MenuPage() {
                 className={`tab ${activeCategoryId === c.id ? 'active' : ''}`}
                 onClick={() => setActiveCategoryId(c.id)}
               >
-                {c.name_ar}
+                <span className="tab__label">{getCategoryLabel(c)}</span>
               </button>
             ))}
           </div>
@@ -123,13 +129,7 @@ export function MenuPage() {
                     ) : null}
                     <div className="menu-card-footer">
                       <span className="price">{formatMoney(Number(item.price))}</span>
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => addItem(item)}
-                      >
-                        أضف للسلة
-                      </button>
+                      <AddToCartButton item={item} onAdd={addItem} />
                     </div>
                   </div>
                 </article>

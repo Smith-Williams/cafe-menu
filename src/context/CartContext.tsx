@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -24,6 +25,8 @@ type CartContextValue = {
   clear: () => void
   totalQuantity: number
   subtotal: number
+  addedToast: string | null
+  dismissToast: () => void
 }
 
 const CartContext = createContext<CartContextValue | null>(null)
@@ -41,12 +44,24 @@ function loadLines(): CartLine[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>(() => loadLines())
+  const [addedToast, setAddedToast] = useState<string | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lines))
   }, [lines])
 
+  const dismissToast = useCallback(() => {
+    setAddedToast(null)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+  }, [])
+
   const addItem = useCallback((item: MenuItem, qty = 1) => {
+    const label = item.name_ar || 'العنصر'
+    setAddedToast(`تمت إضافة «${label}» إلى السلة`)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setAddedToast(null), 2600)
+
     setLines((prev) => {
       const next = [...prev]
       const idx = next.findIndex((l) => l.menuItem.id === item.id)
@@ -60,6 +75,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return next
     })
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
   }, [])
 
   const setQuantity = useCallback((menuItemId: string, quantity: number) => {
@@ -100,6 +121,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clear,
       totalQuantity,
       subtotal,
+      addedToast,
+      dismissToast,
     }),
     [
       lines,
@@ -109,6 +132,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clear,
       totalQuantity,
       subtotal,
+      addedToast,
+      dismissToast,
     ]
   )
 

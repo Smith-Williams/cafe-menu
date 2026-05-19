@@ -4,6 +4,12 @@ import { supabase } from '../../lib/supabase'
 import type { Category, MenuItem } from '../../types/database'
 import { useAuth } from '../../context/AuthContext'
 import { formatMoney } from '../../lib/format'
+import { getCategoryLabel, normalizeCategories } from '../../lib/normalizeCategory'
+import { normalizeItems } from '../../lib/normalizeItem'
+import {
+  mergeOrdersWithItems,
+  type OrderWithItems,
+} from '../../lib/normalizeOrder'
 
 type CategoryDraft = {
   id?: string
@@ -40,8 +46,10 @@ export function AdminDashboard() {
   const { signOut } = useAuth()
   const [categories, setCategories] = useState<Category[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
+  const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [ordersWarning, setOrdersWarning] = useState<string | null>(null)
 
   const [categoryModal, setCategoryModal] = useState(false)
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft>(emptyCategory)
@@ -52,16 +60,64 @@ export function AdminDashboard() {
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setOrdersWarning(null)
+
     const [cRes, iRes] = await Promise.all([
       supabase.from('categories').select('*').order('sort_order', { ascending: true }),
       supabase.from('items').select('*').order('sort_order', { ascending: true }),
     ])
-    if (cRes.error) setError(cRes.error.message)
-    else if (iRes.error) setError(iRes.error.message)
-    else {
-      setCategories(cRes.data ?? [])
-      setItems(iRes.data ?? [])
+
+    if (cRes.error) {
+      setError(cRes.error.message)
+      setLoading(false)
+      return
     }
+    if (iRes.error) {
+      setError(iRes.error.message)
+      setLoading(false)
+      return
+    }
+
+    setCategories(normalizeCategories(cRes.data ?? []))
+    setItems(normalizeItems(iRes.data ?? []))
+
+    let ordersData: unknown[] = []
+    let orderLines: unknown[] = []
+
+    const nestedRes = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .order('created_at', { ascending: false })
+
+    if (!nestedRes.error && nestedRes.data) {
+      ordersData = nestedRes.data
+    } else {
+      const ordersRes = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (ordersRes.error) {
+        setOrdersWarning(ordersRes.error.message)
+        setOrders([])
+      } else {
+        ordersData = ordersRes.data ?? []
+        const ids = ordersData.map((o) => String((o as { id: string }).id))
+        if (ids.length > 0) {
+          const linesRes = await supabase
+            .from('order_items')
+            .select('*')
+            .in('order_id', ids)
+          if (linesRes.error) {
+            setOrdersWarning(linesRes.error.message)
+          } else {
+            orderLines = linesRes.data ?? []
+          }
+        }
+      }
+    }
+
+    setOrders(mergeOrdersWithItems(ordersData, orderLines))
     setLoading(false)
   }, [])
 
@@ -182,7 +238,7 @@ export function AdminDashboard() {
     <>
       <section className="hero">
         <h1>لوحة المالك</h1>
-        <p>إدارة الفئات والعناصر المخزّنة في Supabase.</p>
+        <p>إدارة الفئات والعناصر والطلبات الواردة من الزبائن.</p>
       </section>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -200,10 +256,84 @@ export function AdminDashboard() {
         </div>
       ) : null}
 
+      {ordersWarning ? (
+        <div className="error-banner" role="alert" style={{ marginBottom: '1rem' }}>
+          تعذّر تحميل تفاصيل الطلبات: {ordersWarning}. تأكد من جداول orders و order_items
+          وصلاحيات المالك.
+        </div>
+      ) : null}
+
       {loading ? (
         <p className="loading-inline">جاري التحميل…</p>
       ) : (
         <>
+          <section className="admin-section panel">
+            <header>
+              <h2>الطلبات</h2>
+              <span className="orders-count">{orders.length} طلب</span>
+            </header>
+
+            {orders.length === 0 ? (
+              <p className="loading-inline">لا توجد طلبات بعد.</p>
+            ) : (
+              <div className="orders-list">
+                {orders.map((order) => (
+                  <article key={order.id} className="order-card">
+                    <div className="order-card__head">
+                      <div>
+                        <strong>{order.customer_name}</strong>
+                        <span className="order-card__phone" dir="ltr">
+                          {order.customer_phone}
+                        </span>
+                      </div>
+                      <div className="order-card__meta">
+                        <span className={`order-status order-status--${order.status}`}>
+                          {order.status === 'pending' ? 'قيد الانتظار' : order.status}
+                        </span>
+                        <time className="order-card__time">
+                          {new Date(order.created_at).toLocaleString('ar-SA', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </time>
+                      </div>
+                    </div>
+
+                    {order.items.length > 0 ? (
+                      <ul className="order-card__items">
+                        {order.items.map((line, idx) => (
+                          <li key={`${order.id}-${idx}`}>
+                            <span>
+                              {line.item_name} × {line.quantity}
+                            </span>
+                            <span>
+                              {formatMoney(line.unit_price * line.quantity)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="loading-inline" style={{ margin: '0.5rem 0 0' }}>
+                        لا تفاصيل عناصر لهذا الطلب.
+                      </p>
+                    )}
+
+                    {order.notes ? (
+                      <p className="order-card__notes">
+                        <strong>ملاحظات:</strong> {order.notes}
+                      </p>
+                    ) : null}
+
+                    <div className="order-card__total">
+                      <span>الإجمالي</span>
+                      <span className="price">{formatMoney(order.total_amount)}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
           <section className="admin-section panel">
             <header>
               <h2>الفئات</h2>
@@ -227,7 +357,7 @@ export function AdminDashboard() {
                   {categories.map((c) => (
                     <tr key={c.id}>
                       <td>{c.sort_order}</td>
-                      <td>{c.name_ar}</td>
+                      <td>{getCategoryLabel(c)}</td>
                       <td className="row-actions">
                         <button
                           type="button"
@@ -268,7 +398,7 @@ export function AdminDashboard() {
 
             {categories.map((c) => (
               <div key={c.id} style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', margin: '0 0 0.5rem' }}>{c.name_ar}</h3>
+                <h3 style={{ fontSize: '1rem', margin: '0 0 0.5rem' }}>{getCategoryLabel(c)}</h3>
                 {itemsByCategory(c.id).length === 0 ? (
                   <p className="loading-inline" style={{ margin: '0.25rem 0 0' }}>
                     لا عناصر في هذه الفئة.
@@ -384,7 +514,7 @@ export function AdminDashboard() {
                   <option value="">اختر…</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name_ar}
+                      {getCategoryLabel(c)}
                     </option>
                   ))}
                 </select>
