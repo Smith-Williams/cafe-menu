@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
 import { AuthProvider } from './context/AuthContext'
+import { SettingsProvider } from './context/SettingsContext'
 import { Layout } from './components/Layout'
 import { MenuPage } from './pages/MenuPage'
 import { CartPage } from './pages/CartPage'
@@ -13,8 +14,9 @@ import { AdminGate } from './pages/admin/AdminGate'
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
+      <SettingsProvider>
+        <CartProvider>
+          <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<MenuPage />} />
@@ -35,8 +37,9 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
-      </CartProvider>
+          </BrowserRouter>
+        </CartProvider>
+      </SettingsProvider>
     </AuthProvider>
   )
 }

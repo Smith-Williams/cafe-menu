@@ -1,26 +1,42 @@
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import type { MenuItem } from '../types/database'
 import { useCart } from '../context/CartContext'
+import { useSettings } from '../context/SettingsContext'
 import { formatMoney } from '../lib/format'
-import { normalizeItems } from '../lib/normalizeItem'
+import { fetchMenuData } from '../lib/fetchMenu'
+import { itemReactKey } from '../lib/itemFingerprint'
 import {
   getCategoryLabel,
-  normalizeCategories,
   type CategoryDisplay,
 } from '../lib/normalizeCategory'
 import { AddToCartButton } from '../components/AddToCartButton'
 import { MenuItemImage } from '../components/MenuItemImage'
 
+function MenuSkeleton() {
+  return (
+    <div className="menu-grid" aria-hidden>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="menu-card menu-card--skeleton">
+          <div className="skeleton-shimmer menu-card-image" />
+          <div className="menu-card-body">
+            <div className="skeleton-shimmer skeleton-line skeleton-line--title" />
+            <div className="skeleton-shimmer skeleton-line" />
+            <div className="skeleton-shimmer skeleton-line skeleton-line--short" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function MenuPage() {
   const { addItem } = useCart()
+  const { settings } = useSettings()
   const [categories, setCategories] = useState<CategoryDisplay[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeCategoryId, setActiveCategoryId] = useState<string | 'all'>(
-    'all'
-  )
+  const [activeCategoryId, setActiveCategoryId] = useState<string | 'all'>('all')
 
   useEffect(() => {
     let cancelled = false
@@ -29,27 +45,18 @@ export function MenuPage() {
       setLoading(true)
       setError(null)
 
-      const [catRes, itemRes] = await Promise.all([
-        supabase.from('categories').select('*').order('sort_order', { ascending: true }),
-        supabase.from('items').select('*').order('sort_order', { ascending: true }),
-      ])
-
-      if (cancelled) return
-
-      if (catRes.error) {
-        setError(catRes.error.message)
-        setLoading(false)
-        return
+      try {
+        const data = await fetchMenuData()
+        if (cancelled) return
+        setCategories(data.categories)
+        setItems(data.items)
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'تعذّر تحميل القائمة')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      if (itemRes.error) {
-        setError(itemRes.error.message)
-        setLoading(false)
-        return
-      }
-
-      setCategories(normalizeCategories(catRes.data ?? []))
-      setItems(normalizeItems(itemRes.data ?? []))
-      setLoading(false)
     }
 
     void load()
@@ -64,22 +71,31 @@ export function MenuPage() {
     return base.filter((i) => i.category_id === activeCategoryId)
   }, [items, activeCategoryId])
 
+  const currency = settings.currency_code
+
   return (
     <>
-      <section className="hero">
-        <h1>استمتع بأفضل قهوة ومخبوزات اليوم</h1>
-        <p>اختر الفئة ثم أضف ما يعجبك إلى السلة — تصميم هادئ بخط عربي واضح.</p>
+      <section className="page-hero">
+        <p className="page-hero__eyebrow">قائمة اليوم</p>
+        <h1>{settings.cafe_name_ar}</h1>
+        <p>{settings.tagline_ar ?? 'اختر ما يعجبك وأضفه إلى السلة'}</p>
       </section>
 
       {error ? (
         <div className="error-banner" role="alert">
-          تعذّر تحميل القائمة: {error}. تأكد من تشغيل SQL في Supabase وأن المفاتيح في
-          ملف ‎.env‎ صحيحة.
+          تعذّر تحميل القائمة: {error}
         </div>
       ) : null}
 
       {loading ? (
-        <p className="loading-inline">جاري تحميل القائمة…</p>
+        <>
+          <div className="category-tabs category-tabs--skeleton">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton-shimmer skeleton-tab" />
+            ))}
+          </div>
+          <MenuSkeleton />
+        </>
       ) : (
         <>
           <div className="category-tabs" role="tablist" aria-label="فئات القائمة">
@@ -113,10 +129,7 @@ export function MenuPage() {
           ) : (
             <div className="menu-grid">
               {visibleItems.map((item) => (
-                <article
-                  key={item.id || `${item.category_id}-${item.name_ar}`}
-                  className="menu-card"
-                >
+                <article key={itemReactKey(item)} className="menu-card">
                   <MenuItemImage
                     src={item.image_url}
                     alt={item.name_ar || 'صورة المنتج'}
@@ -129,7 +142,9 @@ export function MenuPage() {
                       <p className="desc">{item.description_ar}</p>
                     ) : null}
                     <div className="menu-card-footer">
-                      <span className="price">{formatMoney(Number(item.price))}</span>
+                      <span className="price">
+                        {formatMoney(Number(item.price), currency)}
+                      </span>
                       <AddToCartButton item={item} onAdd={addItem} />
                     </div>
                   </div>

@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useSettings } from '../context/SettingsContext'
 import { formatMoney } from '../lib/format'
 
 export function CartPage() {
   const { lines, setQuantity, removeLine, subtotal, totalQuantity } = useCart()
+  const { settings } = useSettings()
+  const currency = settings.currency_code
 
   return (
     <>
-      <section className="hero">
+      <section className="page-hero page-hero--compact">
         <h1>سلة الطلبات</h1>
         <p>راجع العناصر ثم أكمل الطلب لتأكيده.</p>
       </section>
@@ -31,7 +34,7 @@ export function CartPage() {
                 <div>
                   <strong>{line.menuItem.name_ar}</strong>
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    {formatMoney(Number(line.menuItem.price))} لكل وحدة
+                    {formatMoney(Number(line.menuItem.price), currency)} لكل وحدة
                   </div>
                 </div>
                 <div style={{ textAlign: 'left' as const }}>
@@ -59,7 +62,7 @@ export function CartPage() {
                     </button>
                   </div>
                   <div style={{ marginTop: '0.35rem', fontWeight: 700 }}>
-                    {formatMoney(Number(line.menuItem.price) * line.quantity)}
+                    {formatMoney(Number(line.menuItem.price) * line.quantity, currency)}
                   </div>
                   <button
                     type="button"
@@ -85,7 +88,7 @@ export function CartPage() {
             >
               <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>الإجمالي</span>
               <span className="price" style={{ fontSize: '1.2rem' }}>
-                {formatMoney(subtotal)}
+                {formatMoney(subtotal, currency)}
               </span>
             </div>
 

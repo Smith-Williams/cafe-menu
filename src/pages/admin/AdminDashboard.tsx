@@ -1,15 +1,19 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import type { Category, MenuItem } from '../../types/database'
+import type { Category, MenuItem, OrderStatus } from '../../types/database'
 import { useAuth } from '../../context/AuthContext'
+import { useSettings } from '../../context/SettingsContext'
 import { formatMoney } from '../../lib/format'
-import { getCategoryLabel, normalizeCategories } from '../../lib/normalizeCategory'
-import { normalizeItems } from '../../lib/normalizeItem'
+import { getCategoryLabel } from '../../lib/normalizeCategory'
+import { fetchMenuData } from '../../lib/fetchMenu'
 import {
   mergeOrdersWithItems,
   type OrderWithItems,
 } from '../../lib/normalizeOrder'
+import { ORDER_STATUSES, orderStatusLabel } from '../../lib/orderStatus'
+
+type AdminTab = 'orders' | 'items' | 'categories' | 'settings'
 
 type CategoryDraft = {
   id?: string
@@ -42,13 +46,23 @@ function emptyItem(categoryId: string): ItemDraft {
   }
 }
 
+const TABS: { id: AdminTab; label: string }[] = [
+  { id: 'orders', label: 'الطلبات' },
+  { id: 'items', label: 'عناصر القائمة' },
+  { id: 'categories', label: 'الفئات' },
+  { id: 'settings', label: 'إعدادات المقهى' },
+]
+
 export function AdminDashboard() {
   const { signOut } = useAuth()
+  const { settings, updateSettings } = useSettings()
+  const [tab, setTab] = useState<AdminTab>('orders')
   const [categories, setCategories] = useState<Category[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [ordersWarning, setOrdersWarning] = useState<string | null>(null)
 
   const [categoryModal, setCategoryModal] = useState(false)
@@ -57,29 +71,39 @@ export function AdminDashboard() {
   const [itemModal, setItemModal] = useState(false)
   const [itemDraft, setItemDraft] = useState<ItemDraft>(emptyItem(''))
 
+  const [settingsDraft, setSettingsDraft] = useState({
+    cafe_name_ar: settings.cafe_name_ar,
+    tagline_ar: settings.tagline_ar ?? '',
+    logo_url: settings.logo_url ?? '',
+    primary_color: settings.primary_color,
+    accent_color: settings.accent_color,
+  })
+  const [savingSettings, setSavingSettings] = useState(false)
+
+  useEffect(() => {
+    setSettingsDraft({
+      cafe_name_ar: settings.cafe_name_ar,
+      tagline_ar: settings.tagline_ar ?? '',
+      logo_url: settings.logo_url ?? '',
+      primary_color: settings.primary_color,
+      accent_color: settings.accent_color,
+    })
+  }, [settings])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     setOrdersWarning(null)
 
-    const [cRes, iRes] = await Promise.all([
-      supabase.from('categories').select('*').order('sort_order', { ascending: true }),
-      supabase.from('items').select('*').order('sort_order', { ascending: true }),
-    ])
-
-    if (cRes.error) {
-      setError(cRes.error.message)
+    try {
+      const menu = await fetchMenuData()
+      setCategories(menu.categories)
+      setItems(menu.items)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'تعذّر تحميل القائمة')
       setLoading(false)
       return
     }
-    if (iRes.error) {
-      setError(iRes.error.message)
-      setLoading(false)
-      return
-    }
-
-    setCategories(normalizeCategories(cRes.data ?? []))
-    setItems(normalizeItems(iRes.data ?? []))
 
     let ordersData: unknown[] = []
     let orderLines: unknown[] = []
@@ -124,6 +148,21 @@ export function AdminDashboard() {
   useEffect(() => {
     void load()
   }, [load])
+
+  async function updateOrderStatus(orderId: string, status: OrderStatus) {
+    setError(null)
+    const { error: err } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+    )
+  }
 
   function openNewCategory() {
     setCategoryDraft(emptyCategory)
@@ -214,10 +253,24 @@ export function AdminDashboard() {
         .from('items')
         .update(payload)
         .eq('id', itemDraft.id)
-      if (err) setError(err.message)
+      if (err) {
+        setError(
+          err.message.includes('items_category_name_unique')
+            ? 'يوجد عنصر بنفس الاسم في هذه الفئة. غيّر الاسم أو عدّل العنصر الموجود.'
+            : err.message
+        )
+        return
+      }
     } else {
       const { error: err } = await supabase.from('items').insert(payload)
-      if (err) setError(err.message)
+      if (err) {
+        setError(
+          err.message.includes('items_category_name_unique')
+            ? 'يوجد عنصر بنفس الاسم في هذه الفئة مسبقاً.'
+            : err.message
+        )
+        return
+      }
     }
     setItemModal(false)
     void load()
@@ -231,208 +284,206 @@ export function AdminDashboard() {
     void load()
   }
 
+  async function saveSettingsForm(e: FormEvent) {
+    e.preventDefault()
+    setSavingSettings(true)
+    setError(null)
+    setSuccess(null)
+    const { error: err } = await updateSettings({
+      cafe_name_ar: settingsDraft.cafe_name_ar.trim() || settings.cafe_name_ar,
+      tagline_ar: settingsDraft.tagline_ar.trim() || null,
+      logo_url: settingsDraft.logo_url.trim() || null,
+      primary_color: settingsDraft.primary_color.trim(),
+      accent_color: settingsDraft.accent_color.trim(),
+    })
+    setSavingSettings(false)
+    if (err) setError(err)
+    else setSuccess('تم حفظ إعدادات المقهى.')
+  }
+
   const itemsByCategory = (catId: string) =>
     items.filter((i) => i.category_id === catId)
 
-  return (
-    <>
-      <section className="hero">
-        <h1>لوحة المالك</h1>
-        <p>إدارة الفئات والعناصر والطلبات الواردة من الزبائن.</p>
-      </section>
+  const currency = settings.currency_code
 
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <button type="button" className="btn btn-ghost" onClick={() => void signOut()}>
-          تسجيل الخروج
-        </button>
-        <Link to="/" className="btn btn-primary">
-          عرض القائمة للزبائن
-        </Link>
-      </div>
+  return (
+    <div className="admin-shell">
+      <header className="admin-header">
+        <div>
+          <h1 className="admin-header__title">لوحة الإدارة</h1>
+          <p className="admin-header__sub">إدارة الطلبات والقائمة ومظهر المقهى</p>
+        </div>
+        <div className="admin-header__actions">
+          <Link to="/" className="btn btn-ghost">
+            عرض القائمة
+          </Link>
+          <button type="button" className="btn btn-ghost" onClick={() => void signOut()}>
+            خروج
+          </button>
+        </div>
+      </header>
+
+      <nav className="admin-tabs" aria-label="أقسام لوحة الإدارة">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`admin-tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+            {t.id === 'orders' && orders.length > 0 ? (
+              <span className="admin-tab__badge">{orders.length}</span>
+            ) : null}
+          </button>
+        ))}
+      </nav>
 
       {error ? (
         <div className="error-banner" role="alert">
           {error}
         </div>
       ) : null}
-
+      {success ? (
+        <div className="success-banner" role="status">
+          {success}
+        </div>
+      ) : null}
       {ordersWarning ? (
-        <div className="error-banner" role="alert" style={{ marginBottom: '1rem' }}>
-          تعذّر تحميل تفاصيل الطلبات: {ordersWarning}. تأكد من جداول orders و order_items
-          وصلاحيات المالك.
+        <div className="error-banner" role="alert">
+          تعذّر تحميل تفاصيل الطلبات: {ordersWarning}
         </div>
       ) : null}
 
       {loading ? (
-        <p className="loading-inline">جاري التحميل…</p>
+        <div className="skeleton-grid" aria-hidden>
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="skeleton-block" />
+          ))}
+        </div>
       ) : (
         <>
-          <section className="admin-section panel">
-            <header>
-              <h2>الطلبات</h2>
-              <span className="orders-count">{orders.length} طلب</span>
-            </header>
+          {tab === 'orders' ? (
+            <section className="panel admin-panel">
+              <header className="admin-panel__head">
+                <h2>الطلبات الواردة</h2>
+                <span className="orders-count">{orders.length} طلب</span>
+              </header>
 
-            {orders.length === 0 ? (
-              <p className="loading-inline">لا توجد طلبات بعد.</p>
-            ) : (
-              <div className="orders-list">
-                {orders.map((order) => (
-                  <article key={order.id} className="order-card">
-                    <div className="order-card__head">
-                      <div>
-                        <strong>{order.customer_name}</strong>
-                        <span className="order-card__phone" dir="ltr">
-                          {order.customer_phone}
+              {orders.length === 0 ? (
+                <p className="empty-state">لا توجد طلبات بعد.</p>
+              ) : (
+                <div className="orders-list">
+                  {orders.map((order) => (
+                    <article key={order.id} className="order-card">
+                      <div className="order-card__head">
+                        <div>
+                          <strong>{order.customer_name}</strong>
+                          <span className="order-card__phone" dir="ltr">
+                            {order.customer_phone}
+                          </span>
+                        </div>
+                        <div className="order-card__meta">
+                          <span className={`order-status order-status--${order.status}`}>
+                            {orderStatusLabel(order.status)}
+                          </span>
+                          <time className="order-card__time">
+                            {new Date(order.created_at).toLocaleString('ar-SA', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
+                          </time>
+                        </div>
+                      </div>
+
+                      {order.items.length > 0 ? (
+                        <ul className="order-card__items">
+                          {order.items.map((line, idx) => (
+                            <li key={`${order.id}-${idx}`}>
+                              <span>
+                                {line.item_name} × {line.quantity}
+                              </span>
+                              <span>
+                                {formatMoney(line.unit_price * line.quantity, currency)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-muted">لا تفاصيل عناصر لهذا الطلب.</p>
+                      )}
+
+                      {order.notes ? (
+                        <p className="order-card__notes">
+                          <strong>ملاحظات:</strong> {order.notes}
+                        </p>
+                      ) : null}
+
+                      <div className="order-card__total">
+                        <span>الإجمالي</span>
+                        <span className="price">
+                          {formatMoney(order.total_amount, currency)}
                         </span>
                       </div>
-                      <div className="order-card__meta">
-                        <span className={`order-status order-status--${order.status}`}>
-                          {order.status === 'pending' ? 'قيد الانتظار' : order.status}
-                        </span>
-                        <time className="order-card__time">
-                          {new Date(order.created_at).toLocaleString('ar-SA', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </time>
-                      </div>
-                    </div>
 
-                    {order.items.length > 0 ? (
-                      <ul className="order-card__items">
-                        {order.items.map((line, idx) => (
-                          <li key={`${order.id}-${idx}`}>
-                            <span>
-                              {line.item_name} × {line.quantity}
-                            </span>
-                            <span>
-                              {formatMoney(line.unit_price * line.quantity)}
-                            </span>
-                          </li>
+                      <div className="order-card__actions">
+                        {ORDER_STATUSES.map((status) => (
+                          <button
+                            key={status}
+                            type="button"
+                            className={`btn btn-ghost btn-sm ${order.status === status ? 'active' : ''}`}
+                            disabled={order.status === status}
+                            onClick={() => void updateOrderStatus(order.id, status)}
+                          >
+                            {orderStatusLabel(status)}
+                          </button>
                         ))}
-                      </ul>
-                    ) : (
-                      <p className="loading-inline" style={{ margin: '0.5rem 0 0' }}>
-                        لا تفاصيل عناصر لهذا الطلب.
-                      </p>
-                    )}
-
-                    {order.notes ? (
-                      <p className="order-card__notes">
-                        <strong>ملاحظات:</strong> {order.notes}
-                      </p>
-                    ) : null}
-
-                    <div className="order-card__total">
-                      <span>الإجمالي</span>
-                      <span className="price">{formatMoney(order.total_amount)}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="admin-section panel">
-            <header>
-              <h2>الفئات</h2>
-              <button type="button" className="btn btn-primary" onClick={openNewCategory}>
-                إضافة فئة
-              </button>
-            </header>
-
-            {categories.length === 0 ? (
-              <p className="loading-inline">لا توجد فئات بعد. أنشئ فئة ثم أضف عناصر.</p>
-            ) : (
-              <table className="table-like">
-                <thead>
-                  <tr>
-                    <th>الترتيب</th>
-                    <th>الاسم</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.sort_order}</td>
-                      <td>{getCategoryLabel(c)}</td>
-                      <td className="row-actions">
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }}
-                          onClick={() => openEditCategory(c)}
-                        >
-                          تعديل
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }}
-                          onClick={() => void deleteCategory(c.id)}
-                        >
-                          حذف
-                        </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </article>
                   ))}
-                </tbody>
-              </table>
-            )}
-          </section>
+                </div>
+              )}
+            </section>
+          ) : null}
 
-          <section className="admin-section panel">
-            <header>
-              <h2>عناصر القائمة</h2>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={openNewItem}
-                disabled={categories.length === 0}
-              >
-                إضافة عنصر
-              </button>
-            </header>
+          {tab === 'categories' ? (
+            <section className="panel admin-panel">
+              <header className="admin-panel__head">
+                <h2>فئات القائمة</h2>
+                <button type="button" className="btn btn-primary" onClick={openNewCategory}>
+                  إضافة فئة
+                </button>
+              </header>
 
-            {categories.map((c) => (
-              <div key={c.id} style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1rem', margin: '0 0 0.5rem' }}>{getCategoryLabel(c)}</h3>
-                {itemsByCategory(c.id).length === 0 ? (
-                  <p className="loading-inline" style={{ margin: '0.25rem 0 0' }}>
-                    لا عناصر في هذه الفئة.
-                  </p>
-                ) : (
+              {categories.length === 0 ? (
+                <p className="empty-state">لا توجد فئات. أنشئ فئة ثم أضف عناصر.</p>
+              ) : (
+                <div className="table-wrap">
                   <table className="table-like">
                     <thead>
                       <tr>
+                        <th>الترتيب</th>
                         <th>الاسم</th>
-                        <th>السعر</th>
-                        <th>متاح</th>
                         <th />
                       </tr>
                     </thead>
                     <tbody>
-                      {itemsByCategory(c.id).map((row) => (
-                        <tr key={row.id}>
-                          <td>{row.name_ar}</td>
-                          <td>{formatMoney(Number(row.price))}</td>
-                          <td>{row.available ? 'نعم' : 'لا'}</td>
+                      {categories.map((c) => (
+                        <tr key={c.id}>
+                          <td>{c.sort_order}</td>
+                          <td>{getCategoryLabel(c)}</td>
                           <td className="row-actions">
                             <button
                               type="button"
-                              className="btn btn-ghost"
-                              style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }}
-                              onClick={() => openEditItem(row)}
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => openEditCategory(c)}
                             >
                               تعديل
                             </button>
                             <button
                               type="button"
-                              className="btn btn-danger"
-                              style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem' }}
-                              onClick={() => void deleteItem(row.id)}
+                              className="btn btn-danger btn-sm"
+                              onClick={() => void deleteCategory(c.id)}
                             >
                               حذف
                             </button>
@@ -441,10 +492,190 @@ export function AdminDashboard() {
                       ))}
                     </tbody>
                   </table>
-                )}
-              </div>
-            ))}
-          </section>
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {tab === 'items' ? (
+            <section className="panel admin-panel">
+              <header className="admin-panel__head">
+                <h2>عناصر القائمة</h2>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={openNewItem}
+                  disabled={categories.length === 0}
+                >
+                  إضافة عنصر
+                </button>
+              </header>
+
+              <p className="text-muted admin-hint">
+                كل عنصر يظهر مرة واحدة للزبائن. الأسماء المكررة في نفس الفئة تُمنع تلقائياً.
+              </p>
+
+              {categories.map((c) => (
+                <div key={c.id} className="admin-category-block">
+                  <h3 className="admin-category-block__title">{getCategoryLabel(c)}</h3>
+                  {itemsByCategory(c.id).length === 0 ? (
+                    <p className="text-muted">لا عناصر في هذه الفئة.</p>
+                  ) : (
+                    <div className="table-wrap">
+                      <table className="table-like">
+                        <thead>
+                          <tr>
+                            <th>الاسم</th>
+                            <th>السعر</th>
+                            <th>متاح</th>
+                            <th />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {itemsByCategory(c.id).map((row) => (
+                            <tr key={row.id}>
+                              <td>{row.name_ar}</td>
+                              <td>{formatMoney(Number(row.price), currency)}</td>
+                              <td>
+                                <span
+                                  className={
+                                    row.available ? 'badge badge--ok' : 'badge badge--off'
+                                  }
+                                >
+                                  {row.available ? 'متاح' : 'مخفي'}
+                                </span>
+                              </td>
+                              <td className="row-actions">
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={() => openEditItem(row)}
+                                >
+                                  تعديل
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => void deleteItem(row.id)}
+                                >
+                                  حذف
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </section>
+          ) : null}
+
+          {tab === 'settings' ? (
+            <section className="panel admin-panel">
+              <header className="admin-panel__head">
+                <h2>إعدادات المقهى</h2>
+              </header>
+
+              <form onSubmit={saveSettingsForm} className="form-grid settings-form">
+                <label>
+                  اسم المقهى
+                  <input
+                    value={settingsDraft.cafe_name_ar}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, cafe_name_ar: e.target.value }))
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  الشعار (نص تحت الاسم)
+                  <input
+                    value={settingsDraft.tagline_ar}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, tagline_ar: e.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  رابط الشعار (صورة)
+                  <input
+                    type="url"
+                    value={settingsDraft.logo_url}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, logo_url: e.target.value }))
+                    }
+                    placeholder="https://…"
+                  />
+                </label>
+                {settingsDraft.logo_url.trim() ? (
+                  <div className="brand-preview">
+                    <img
+                      src={settingsDraft.logo_url.trim()}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                ) : null}
+                <div className="color-fields">
+                  <label>
+                    اللون الأساسي
+                    <div className="color-input">
+                      <input
+                        type="color"
+                        value={settingsDraft.primary_color}
+                        onChange={(e) =>
+                          setSettingsDraft((d) => ({
+                            ...d,
+                            primary_color: e.target.value,
+                          }))
+                        }
+                      />
+                      <input
+                        value={settingsDraft.primary_color}
+                        onChange={(e) =>
+                          setSettingsDraft((d) => ({
+                            ...d,
+                            primary_color: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </label>
+                  <label>
+                    اللون الثانوي
+                    <div className="color-input">
+                      <input
+                        type="color"
+                        value={settingsDraft.accent_color}
+                        onChange={(e) =>
+                          setSettingsDraft((d) => ({
+                            ...d,
+                            accent_color: e.target.value,
+                          }))
+                        }
+                      />
+                      <input
+                        value={settingsDraft.accent_color}
+                        onChange={(e) =>
+                          setSettingsDraft((d) => ({
+                            ...d,
+                            accent_color: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </label>
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={savingSettings}>
+                  {savingSettings ? 'جاري الحفظ…' : 'حفظ الإعدادات'}
+                </button>
+              </form>
+            </section>
+          ) : null}
         </>
       )}
 
@@ -481,7 +712,11 @@ export function AdminDashboard() {
                 />
               </label>
               <div className="modal-actions">
-                <button type="button" className="btn btn-ghost" onClick={() => setCategoryModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setCategoryModal(false)}
+                >
                   إلغاء
                 </button>
                 <button type="submit" className="btn btn-primary">
@@ -539,7 +774,7 @@ export function AdminDashboard() {
                 />
               </label>
               <label>
-                السعر (رقم فقط)
+                السعر
                 <input
                   type="number"
                   inputMode="decimal"
@@ -553,7 +788,7 @@ export function AdminDashboard() {
                 />
               </label>
               <label>
-                رابط الصورة (image_url)
+                رابط الصورة
                 <input
                   type="url"
                   value={itemDraft.image_url}
@@ -567,14 +802,14 @@ export function AdminDashboard() {
                 <div className="image-preview">
                   <img
                     src={itemDraft.image_url.trim()}
-                    alt="معاينة الصورة"
+                    alt="معاينة"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none'
                     }}
                   />
                 </div>
               ) : null}
-              <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
+              <label className="checkbox-row">
                 <input
                   type="checkbox"
                   checked={itemDraft.available}
@@ -609,6 +844,6 @@ export function AdminDashboard() {
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   )
 }

@@ -1,4 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { useSettings } from '../context/SettingsContext'
 import { formatMoney } from '../lib/format'
 
 type ConfirmLine = {
@@ -17,13 +18,15 @@ type LocationState = {
 export function OrderConfirmationPage() {
   const { id } = useParams()
   const location = useLocation()
+  const { settings } = useSettings()
+  const currency = settings.currency_code
   const state = (location.state ?? {}) as LocationState
 
   return (
     <>
-      <section className="hero">
+      <section className="page-hero page-hero--compact">
         <h1>تم استلام طلبك</h1>
-        <p>شكراً لاختياركم — سنتواصل معكم قريباً لتأكيد التجهيز.</p>
+        <p>شكراً لاختيار {settings.cafe_name_ar} — سنتواصل معكم قريباً.</p>
       </section>
 
       <div className="panel">
@@ -57,13 +60,13 @@ export function OrderConfirmationPage() {
                   <span>
                     {l.name} × {l.qty}
                   </span>
-                  <span>{formatMoney(l.lineTotal)}</span>
+                  <span>{formatMoney(l.lineTotal, currency)}</span>
                 </li>
               ))}
               {typeof state.total === 'number' ? (
                 <li style={{ marginTop: '0.5rem', fontWeight: 700 }}>
                   <span>الإجمالي</span>
-                  <span>{formatMoney(state.total)}</span>
+                  <span>{formatMoney(state.total, currency)}</span>
                 </li>
               ) : null}
             </ul>

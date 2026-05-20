@@ -110,6 +110,38 @@ export interface Database {
           created_at?: string
         }
       }
+      cafe_settings: {
+        Row: {
+          id: number
+          cafe_name_ar: string
+          tagline_ar: string | null
+          logo_url: string | null
+          primary_color: string
+          accent_color: string
+          currency_code: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          cafe_name_ar?: string
+          tagline_ar?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          accent_color?: string
+          currency_code?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          cafe_name_ar?: string
+          tagline_ar?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          accent_color?: string
+          currency_code?: string
+          updated_at?: string
+        }
+      }
       order_items: {
         Row: {
           id: string
@@ -145,3 +177,6 @@ export interface Database {
 
 export type Category = Database['public']['Tables']['categories']['Row']
 export type MenuItem = Database['public']['Tables']['items']['Row']
+export type CafeSettings = Database['public']['Tables']['cafe_settings']['Row']
+
+export type OrderStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'

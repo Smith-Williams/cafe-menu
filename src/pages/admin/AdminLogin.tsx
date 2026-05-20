@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 export function AdminLogin() {
-  const { session, loading, profileReady, signIn } = useAuth()
+  const { session, loading, profileReady, isOwner, signIn } = useAuth()
   const location = useLocation()
   const from = (location.state as { from?: string })?.from ?? '/admin'
 
@@ -25,13 +25,29 @@ export function AdminLogin() {
     return <p className="loading-inline">جاري التحميل…</p>
   }
 
-  if (session && profileReady) {
+  if (session && profileReady && isOwner) {
     return <Navigate to={from} replace />
   }
 
+  if (session && profileReady && !isOwner) {
+    return (
+      <div className="app-shell">
+        <div className="panel" style={{ maxWidth: 480, margin: '2rem auto' }}>
+          <h2>لا تملك صلاحية المالك</h2>
+          <p className="text-muted">
+            هذا الحساب غير مفعّل كمالك. اطلب من مدير النظام تفعيل is_owner في Supabase.
+          </p>
+          <Link to="/" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            العودة للقائمة
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <>
-      <section className="hero">
+    <div className="app-shell">
+      <section className="page-hero page-hero--compact">
         <h1>تسجيل دخول المالك</h1>
         <p>
           استخدم البريد وكلمة المرور المفعّلة في Supabase Auth. يجب أن يكون حسابك مُعلَماً
@@ -79,6 +95,6 @@ export function AdminLogin() {
           <Link to="/">القائمة</Link>
         </p>
       </div>
-    </>
+    </div>
   )
 }

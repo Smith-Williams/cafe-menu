@@ -1,7 +1,7 @@
-export function formatMoney(amount: number): string {
+export function formatMoney(amount: number, currency = 'SAR'): string {
   return new Intl.NumberFormat('ar-SA', {
     style: 'currency',
-    currency: 'SAR',
+    currency: currency || 'SAR',
     minimumFractionDigits: 2,
   }).format(amount)
 }

@@ -1,4 +1,5 @@
 import type { MenuItem } from '../types/database'
+import { itemFingerprint } from './itemFingerprint'
 import { pickString } from './pickField'
 
 function pickImageUrl(row: Record<string, unknown>): string | null {
@@ -39,8 +40,8 @@ export function normalizeItem(row: Record<string, unknown>): MenuItem {
   )
 
   return {
-    id: String(row.id ?? ''),
-    category_id: String(row.category_id ?? ''),
+    id: String(row.id ?? '').trim(),
+    category_id: String(row.category_id ?? '').trim(),
     name_ar: String(name).trim(),
     description_ar: descText || null,
     price: Number(row.price),
@@ -51,31 +52,35 @@ export function normalizeItem(row: Record<string, unknown>): MenuItem {
   }
 }
 
-/** Remove duplicate rows (same id, or same name+category+price). */
+/**
+ * Keep exactly one row per product.
+ * Skips duplicates that share the same id OR the same name+category+price.
+ */
 export function dedupeItems(items: MenuItem[]): MenuItem[] {
-  const byId = new Map<string, MenuItem>()
-  const seen = new Set<string>()
-
   const sorted = [...items].sort(
-    (a, b) => a.sort_order - b.sort_order || a.name_ar.localeCompare(b.name_ar, 'ar')
+    (a, b) =>
+      a.sort_order - b.sort_order ||
+      a.name_ar.localeCompare(b.name_ar, 'ar') ||
+      a.id.localeCompare(b.id)
   )
 
+  const seenIds = new Set<string>()
+  const seenFingerprints = new Set<string>()
+  const result: MenuItem[] = []
+
   for (const item of sorted) {
-    const fingerprint = `${item.category_id}::${item.name_ar.toLowerCase()}::${item.price}`
+    const id = item.id.trim()
+    const fp = itemFingerprint(item)
 
-    if (item.id) {
-      if (byId.has(item.id)) continue
-      byId.set(item.id, item)
-      seen.add(fingerprint)
-      continue
-    }
+    if (seenFingerprints.has(fp)) continue
+    if (id && seenIds.has(id)) continue
 
-    if (seen.has(fingerprint)) continue
-    seen.add(fingerprint)
-    byId.set(`fp-${fingerprint}`, item)
+    if (id) seenIds.add(id)
+    seenFingerprints.add(fp)
+    result.push(item)
   }
 
-  return Array.from(byId.values())
+  return result
 }
 
 export function normalizeItems(rows: unknown[]): MenuItem[] {
