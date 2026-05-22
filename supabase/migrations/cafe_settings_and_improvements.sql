@@ -2,7 +2,8 @@
 
 -- Singleton cafe branding / theme
 create table if not exists public.cafe_settings (
-  id int primary key default 1 check (id = 1),
+  id uuid primary key default '00000000-0000-0000-0000-000000000001'::uuid
+    check (id = '00000000-0000-0000-0000-000000000001'::uuid),
   cafe_name_ar text not null default 'مقهى الدُّفء',
   tagline_ar text default 'قهوة مختصة ومخبوزات طازجة',
   logo_url text,
@@ -13,7 +14,7 @@ create table if not exists public.cafe_settings (
 );
 
 insert into public.cafe_settings (id)
-values (1)
+values ('00000000-0000-0000-0000-000000000001'::uuid)
 on conflict (id) do nothing;
 
 alter table public.cafe_settings enable row level security;

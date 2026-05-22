@@ -1,8 +1,11 @@
 import { supabase } from './supabase'
 import type { CafeSettings } from '../types/database'
 
+/** Singleton cafe_settings row id (fixed UUID). */
+export const CAFE_SETTINGS_ID = '00000000-0000-0000-0000-000000000001'
+
 export const DEFAULT_CAFE_SETTINGS: CafeSettings = {
-  id: 1,
+  id: CAFE_SETTINGS_ID,
   cafe_name_ar: 'مقهى الدُّفء',
   tagline_ar: 'قهوة مختصة ومخبوزات طازجة — اطلب بسهولة',
   logo_url: null,
@@ -48,7 +51,7 @@ export async function fetchCafeSettings(): Promise<CafeSettings> {
   const { data, error } = await supabase
     .from('cafe_settings')
     .select('*')
-    .eq('id', 1)
+    .eq('id', CAFE_SETTINGS_ID)
     .maybeSingle()
 
   if (error || !data) return DEFAULT_CAFE_SETTINGS
@@ -71,7 +74,7 @@ export async function saveCafeSettings(
   const { error } = await supabase
     .from('cafe_settings')
     .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq('id', 1)
+    .eq('id', CAFE_SETTINGS_ID)
 
   return { error: error?.message ?? null }
 }

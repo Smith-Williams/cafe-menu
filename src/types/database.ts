@@ -112,7 +112,7 @@ export interface Database {
       }
       cafe_settings: {
         Row: {
-          id: number
+          id: string
           cafe_name_ar: string
           tagline_ar: string | null
           logo_url: string | null
@@ -122,7 +122,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
-          id?: number
+          id?: string
           cafe_name_ar?: string
           tagline_ar?: string | null
           logo_url?: string | null
@@ -132,7 +132,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          id?: number
+          id?: string
           cafe_name_ar?: string
           tagline_ar?: string | null
           logo_url?: string | null
