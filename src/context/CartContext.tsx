@@ -58,7 +58,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: MenuItem, qty = 1) => {
     const label = item.name_ar || 'العنصر'
-    setAddedToast(`تمت إضافة «${label}» إلى السلة`)
+    setAddedToast(label)
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     toastTimerRef.current = setTimeout(() => setAddedToast(null), 2600)
 

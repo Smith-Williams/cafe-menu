@@ -50,7 +50,7 @@ const TABS: { id: AdminTab; label: string }[] = [
   { id: 'orders', label: 'الطلبات' },
   { id: 'items', label: 'عناصر القائمة' },
   { id: 'categories', label: 'الفئات' },
-  { id: 'settings', label: 'إعدادات المقهى' },
+  { id: 'settings', label: 'إعدادات EVA' },
 ]
 
 export function AdminDashboard() {
@@ -298,7 +298,7 @@ export function AdminDashboard() {
     })
     setSavingSettings(false)
     if (err) setError(err)
-    else setSuccess('تم حفظ إعدادات المقهى.')
+    else setSuccess('تم حفظ إعدادات EVA Coffee.')
   }
 
   const itemsByCategory = (catId: string) =>
@@ -311,7 +311,7 @@ export function AdminDashboard() {
       <header className="admin-header">
         <div>
           <h1 className="admin-header__title">لوحة الإدارة</h1>
-          <p className="admin-header__sub">إدارة الطلبات والقائمة ومظهر المقهى</p>
+          <p className="admin-header__sub">EVA Coffee — إدارة الطلبات والقائمة والهوية</p>
         </div>
         <div className="admin-header__actions">
           <Link to="/" className="btn btn-ghost">
@@ -575,7 +575,7 @@ export function AdminDashboard() {
           {tab === 'settings' ? (
             <section className="panel admin-panel">
               <header className="admin-panel__head">
-                <h2>إعدادات المقهى</h2>
+                <h2>إعدادات EVA Coffee</h2>
               </header>
 
               <form onSubmit={saveSettingsForm} className="form-grid settings-form">

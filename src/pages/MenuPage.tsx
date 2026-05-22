@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { MenuItem } from '../types/database'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
+import { EVA_BRAND } from '../lib/brand'
 import { formatMoney } from '../lib/format'
 import { fetchMenuData } from '../lib/fetchMenu'
 import { itemReactKey } from '../lib/itemFingerprint'
@@ -75,10 +76,16 @@ export function MenuPage() {
 
   return (
     <>
-      <section className="page-hero">
-        <p className="page-hero__eyebrow">قائمة اليوم</p>
-        <h1>{settings.cafe_name_ar}</h1>
-        <p>{settings.tagline_ar ?? 'اختر ما يعجبك وأضفه إلى السلة'}</p>
+      <section className="page-hero page-hero--eva">
+        <p className="page-hero__eyebrow">{EVA_BRAND.nameEn}</p>
+        <h1 className="page-hero__dual">
+          <span className="page-hero__en">{EVA_BRAND.nameEn}</span>
+          <span className="page-hero__ar">{EVA_BRAND.nameAr}</span>
+        </h1>
+        <p className="page-hero__tagline-en">{EVA_BRAND.taglineEn}</p>
+        <p className="page-hero__tagline-ar">
+          {settings.tagline_ar ?? EVA_BRAND.taglineAr}
+        </p>
       </section>
 
       {error ? (
@@ -128,8 +135,12 @@ export function MenuPage() {
             </div>
           ) : (
             <div className="menu-grid">
-              {visibleItems.map((item) => (
-                <article key={itemReactKey(item)} className="menu-card">
+              {visibleItems.map((item, index) => (
+                <article
+                  key={itemReactKey(item)}
+                  className="menu-card"
+                  style={{ animationDelay: `${Math.min(index * 0.05, 0.35)}s` }}
+                >
                   <MenuItemImage
                     src={item.image_url}
                     alt={item.name_ar || 'صورة المنتج'}

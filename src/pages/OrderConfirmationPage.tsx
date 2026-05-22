@@ -26,7 +26,7 @@ export function OrderConfirmationPage() {
     <>
       <section className="page-hero page-hero--compact">
         <h1>تم استلام طلبك</h1>
-        <p>شكراً لاختيار {settings.cafe_name_ar} — سنتواصل معكم قريباً.</p>
+        <p>شكراً لاختيار EVA Coffee — سنتواصل معكم قريباً.</p>
       </section>
 
       <div className="panel">

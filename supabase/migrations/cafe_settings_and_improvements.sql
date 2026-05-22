@@ -4,11 +4,11 @@
 create table if not exists public.cafe_settings (
   id uuid primary key default '00000000-0000-0000-0000-000000000001'::uuid
     check (id = '00000000-0000-0000-0000-000000000001'::uuid),
-  cafe_name_ar text not null default 'مقهى الدُّفء',
-  tagline_ar text default 'قهوة مختصة ومخبوزات طازجة',
+  cafe_name_ar text not null default 'إيفا كافيه',
+  tagline_ar text default 'حيث تروي كل رشفة قصة',
   logo_url text,
-  primary_color text not null default '#c9a87c',
-  accent_color text not null default '#8b6f47',
+  primary_color text not null default '#C9A227',
+  accent_color text not null default '#F5F1E8',
   currency_code text not null default 'SAR',
   updated_at timestamptz not null default now()
 );

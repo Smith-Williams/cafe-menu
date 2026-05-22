@@ -1,16 +1,17 @@
 import { supabase } from './supabase'
 import type { CafeSettings } from '../types/database'
+import { EVA_BRAND } from './brand'
 
 /** Singleton cafe_settings row id (fixed UUID). */
 export const CAFE_SETTINGS_ID = '00000000-0000-0000-0000-000000000001'
 
 export const DEFAULT_CAFE_SETTINGS: CafeSettings = {
   id: CAFE_SETTINGS_ID,
-  cafe_name_ar: 'مقهى الدُّفء',
-  tagline_ar: 'قهوة مختصة ومخبوزات طازجة — اطلب بسهولة',
+  cafe_name_ar: EVA_BRAND.nameAr,
+  tagline_ar: EVA_BRAND.taglineAr,
   logo_url: null,
-  primary_color: '#c9a87c',
-  accent_color: '#8b6f47',
+  primary_color: EVA_BRAND.colors.gold,
+  accent_color: EVA_BRAND.colors.cream,
   currency_code: 'SAR',
   updated_at: new Date().toISOString(),
 }
@@ -26,24 +27,31 @@ function lighten(hex: string, amount: number): string {
   const rgb = hexToRgb(hex)
   if (!rgb) return hex
   const mix = (c: number) => Math.round(c + (255 - c) * amount)
-  const r = mix(rgb.r)
-  const g = mix(rgb.g)
-  const b = mix(rgb.b)
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`
+  return `#${[mix(rgb.r), mix(rgb.g), mix(rgb.b)]
+    .map((x) => x.toString(16).padStart(2, '0'))
+    .join('')}`
 }
 
-export function applyCafeTheme(settings: Pick<CafeSettings, 'primary_color' | 'accent_color'>) {
-  const primary = settings.primary_color?.trim() || DEFAULT_CAFE_SETTINGS.primary_color
-  const accent = settings.accent_color?.trim() || DEFAULT_CAFE_SETTINGS.accent_color
+export function applyCafeTheme(
+  settings: Pick<CafeSettings, 'primary_color' | 'accent_color'>
+) {
+  const gold = settings.primary_color?.trim() || EVA_BRAND.colors.gold
+  const cream = settings.accent_color?.trim() || EVA_BRAND.colors.cream
+  const rgb = hexToRgb(gold)
   const root = document.documentElement
-  root.style.setProperty('--accent', primary)
-  root.style.setProperty('--accent-deep', accent)
-  root.style.setProperty('--accent-hover', lighten(primary, 0.12))
+
+  root.style.setProperty('--gold', gold)
+  root.style.setProperty('--cream', cream)
+  root.style.setProperty('--accent', gold)
+  root.style.setProperty('--accent-deep', EVA_BRAND.colors.primary)
+  root.style.setProperty('--accent-hover', lighten(gold, 0.14))
   root.style.setProperty(
     '--accent-glow',
-    hexToRgb(primary)
-      ? `rgba(${hexToRgb(primary)!.r}, ${hexToRgb(primary)!.g}, ${hexToRgb(primary)!.b}, 0.28)`
-      : 'rgba(201, 168, 124, 0.28)'
+    rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)` : 'rgba(201, 162, 39, 0.35)'
+  )
+  root.style.setProperty(
+    '--gold-glow',
+    rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)` : 'rgba(201, 162, 39, 0.22)'
   )
 }
 
