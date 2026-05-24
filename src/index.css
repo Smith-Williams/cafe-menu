@@ -1776,6 +1776,215 @@ textarea {
   }
 }
 
+/* ——— Admin realtime notifications ——— */
+.admin-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: rgba(201, 162, 39, 0.1);
+  border: 1px solid var(--border);
+}
+
+.admin-bell__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 0.2s var(--ease-out);
+}
+
+.admin-bell--ring .admin-bell__icon {
+  animation: bell-ring 0.9s var(--ease-spring);
+}
+
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(18deg);
+  }
+  30% {
+    transform: rotate(-16deg);
+  }
+  45% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}
+
+.admin-bell__count {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--eva-bg);
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-surface);
+}
+
+.admin-bell__live {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 0 8px rgba(110, 207, 143, 0.6);
+}
+
+.order-notify-toast {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 300;
+  width: min(400px, calc(100vw - 2rem));
+  padding: 1.15rem 1.2rem 1.2rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(165deg, var(--bg-card) 0%, var(--eva-black) 100%);
+  border: 1px solid var(--border-gold);
+  box-shadow: var(--shadow), var(--shadow-gold);
+  transform: translateX(-50%) translateY(-120%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.45s var(--ease-spring),
+    opacity 0.35s var(--ease-out);
+}
+
+.order-notify-toast--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  animation: order-toast-in 0.5s var(--ease-spring);
+}
+
+@keyframes order-toast-in {
+  0% {
+    transform: translateX(-50%) scale(0.92) translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.order-notify-toast__close {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.order-notify-toast__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.order-notify-toast__badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  background: var(--gold);
+  color: var(--eva-bg);
+}
+
+.order-notify-toast__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-cream);
+}
+
+.order-notify-toast__customer {
+  margin: 0 0 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.order-notify-toast__phone {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.order-notify-toast__items {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.order-notify-toast__total {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+}
+
+.admin-tab__badge--pulse {
+  animation: badge-pulse 0.8s var(--ease-spring) 2;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+}
+
+.orders-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.orders-live-dot {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--success);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(110, 207, 143, 0.12);
+  border: 1px solid rgba(110, 207, 143, 0.25);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

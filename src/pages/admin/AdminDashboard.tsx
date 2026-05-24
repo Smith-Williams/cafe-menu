@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import type { Category, MenuItem, OrderStatus } from '../../types/database'
@@ -12,6 +12,9 @@ import {
   type OrderWithItems,
 } from '../../lib/normalizeOrder'
 import { ORDER_STATUSES, orderStatusLabel } from '../../lib/orderStatus'
+import { useOrderRealtime } from '../../hooks/useOrderRealtime'
+import { NewOrderToast } from '../../components/admin/NewOrderToast'
+import { OrderNotificationBell } from '../../components/admin/OrderNotificationBell'
 
 type AdminTab = 'orders' | 'items' | 'categories' | 'settings'
 
@@ -80,6 +83,37 @@ export function AdminDashboard() {
     accent_color: settings.accent_color,
   })
   const [savingSettings, setSavingSettings] = useState(false)
+  const [newOrderToast, setNewOrderToast] = useState<OrderWithItems | null>(null)
+  const [bellRinging, setBellRinging] = useState(false)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleRealtimeOrder = useCallback((order: OrderWithItems) => {
+    setOrders((prev) => {
+      if (prev.some((o) => o.id === order.id)) return prev
+      return [order, ...prev]
+    })
+    setNewOrderToast(order)
+    setBellRinging(true)
+
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setNewOrderToast(null), 10000)
+
+    if (bellTimerRef.current) clearTimeout(bellTimerRef.current)
+    bellTimerRef.current = setTimeout(() => setBellRinging(false), 1400)
+  }, [])
+
+  const { seedSeenOrders, isLive: ordersRealtimeLive } = useOrderRealtime({
+    enabled: true,
+    onNewOrder: handleRealtimeOrder,
+  })
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      if (bellTimerRef.current) clearTimeout(bellTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     setSettingsDraft({
@@ -142,13 +176,28 @@ export function AdminDashboard() {
       }
     }
 
-    setOrders(mergeOrdersWithItems(ordersData, orderLines))
+    const merged = mergeOrdersWithItems(ordersData, orderLines)
+    setOrders(merged)
+    seedSeenOrders(merged.map((o) => o.id))
     setLoading(false)
-  }, [])
+  }, [seedSeenOrders])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  function dismissOrderToast() {
+    setNewOrderToast(null)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+  }
+
+  function viewOrderFromToast() {
+    setTab('orders')
+    dismissOrderToast()
+    window.setTimeout(() => {
+      document.getElementById('admin-orders-panel')?.scrollIntoView({ behavior: 'smooth' })
+    }, 80)
+  }
 
   async function updateOrderStatus(orderId: string, status: OrderStatus) {
     setError(null)
@@ -311,12 +360,26 @@ export function AdminDashboard() {
 
   return (
     <div className="admin-shell">
+      {newOrderToast ? (
+        <NewOrderToast
+          order={newOrderToast}
+          currency={currency}
+          onDismiss={dismissOrderToast}
+          onView={viewOrderFromToast}
+        />
+      ) : null}
+
       <header className="admin-header">
         <div>
           <h1 className="admin-header__title">لوحة الإدارة</h1>
           <p className="admin-header__sub">EVA Coffee — إدارة الطلبات والقائمة والهوية</p>
         </div>
         <div className="admin-header__actions">
+          <OrderNotificationBell
+            orderCount={orders.length}
+            ringing={bellRinging}
+            live={ordersRealtimeLive}
+          />
           <Link to="/" className="btn btn-ghost">
             عرض القائمة
           </Link>
@@ -336,7 +399,11 @@ export function AdminDashboard() {
           >
             {t.label}
             {t.id === 'orders' && orders.length > 0 ? (
-              <span className="admin-tab__badge">{orders.length}</span>
+              <span
+                className={`admin-tab__badge${bellRinging ? ' admin-tab__badge--pulse' : ''}`}
+              >
+                {orders.length}
+              </span>
             ) : null}
           </button>
         ))}
@@ -367,10 +434,17 @@ export function AdminDashboard() {
       ) : (
         <>
           {tab === 'orders' ? (
-            <section className="panel admin-panel">
+            <section id="admin-orders-panel" className="panel admin-panel">
               <header className="admin-panel__head">
                 <h2>الطلبات الواردة</h2>
-                <span className="orders-count">{orders.length} طلب</span>
+                <span className="orders-count">
+                  {orders.length} طلب
+                  {ordersRealtimeLive ? (
+                    <span className="orders-live-dot" title="متصل بالوقت الفعلي">
+                      مباشر
+                    </span>
+                  ) : null}
+                </span>
               </header>
 
               {orders.length === 0 ? (
