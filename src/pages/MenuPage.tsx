@@ -3,14 +3,13 @@ import type { MenuItem } from '../types/database'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
 import { EVA_BRAND } from '../lib/brand'
+import { buildCategoryTabs } from '../lib/categoryIcons'
 import { formatMoney } from '../lib/format'
 import { fetchMenuData } from '../lib/fetchMenu'
 import { itemReactKey } from '../lib/itemFingerprint'
-import {
-  getCategoryLabel,
-  type CategoryDisplay,
-} from '../lib/normalizeCategory'
+import type { CategoryDisplay } from '../lib/normalizeCategory'
 import { AddToCartButton } from '../components/AddToCartButton'
+import { CategoryTabs } from '../components/CategoryTabs'
 import { MenuItemImage } from '../components/MenuItemImage'
 
 function MenuSkeleton() {
@@ -66,6 +65,8 @@ export function MenuPage() {
     }
   }, [])
 
+  const tabs = useMemo(() => buildCategoryTabs(categories), [categories])
+
   const visibleItems = useMemo(() => {
     const base = items.filter((i) => i.available)
     if (activeCategoryId === 'all') return base
@@ -76,16 +77,10 @@ export function MenuPage() {
 
   return (
     <>
-      <section className="page-hero page-hero--eva">
+      <section className="page-hero page-hero--menu">
         <p className="page-hero__eyebrow">{EVA_BRAND.nameEn}</p>
-        <h1 className="page-hero__dual">
-          <span className="page-hero__en">{EVA_BRAND.nameEn}</span>
-          <span className="page-hero__ar">{EVA_BRAND.nameAr}</span>
-        </h1>
+        <h1 className="page-hero__title-compact">{EVA_BRAND.nameAr}</h1>
         <p className="page-hero__tagline-en">{EVA_BRAND.taglineEn}</p>
-        <p className="page-hero__tagline-ar">
-          {settings.tagline_ar ?? EVA_BRAND.taglineAr}
-        </p>
       </section>
 
       {error ? (
@@ -96,51 +91,34 @@ export function MenuPage() {
 
       {loading ? (
         <>
-          <div className="category-tabs category-tabs--skeleton">
+          <div className="category-strip category-strip--skeleton">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton-shimmer skeleton-tab" />
+              <div key={i} className="skeleton-shimmer skeleton-tab-pill" />
             ))}
           </div>
           <MenuSkeleton />
         </>
       ) : (
         <>
-          <div className="category-tabs" role="tablist" aria-label="فئات القائمة">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeCategoryId === 'all'}
-              className={`tab ${activeCategoryId === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveCategoryId('all')}
-            >
-              الكل
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                role="tab"
-                aria-selected={activeCategoryId === c.id}
-                className={`tab ${activeCategoryId === c.id ? 'active' : ''}`}
-                onClick={() => setActiveCategoryId(c.id)}
-              >
-                <span className="tab__label">{getCategoryLabel(c)}</span>
-              </button>
-            ))}
-          </div>
+          <CategoryTabs
+            tabs={tabs}
+            activeId={activeCategoryId}
+            onChange={setActiveCategoryId}
+          />
 
           {visibleItems.length === 0 ? (
             <div className="panel empty-state">
               لا توجد عناصر في هذه الفئة حالياً.
             </div>
           ) : (
-            <div className="menu-grid">
+            <div className="menu-grid" key={activeCategoryId}>
               {visibleItems.map((item, index) => (
                 <article
                   key={itemReactKey(item)}
-                  className="menu-card"
-                  style={{ animationDelay: `${Math.min(index * 0.05, 0.35)}s` }}
+                  className="menu-card menu-card--premium"
+                  style={{ animationDelay: `${Math.min(index * 0.04, 0.28)}s` }}
                 >
+                  <div className="menu-card__accent" aria-hidden />
                   <MenuItemImage
                     src={item.image_url}
                     alt={item.name_ar || 'صورة المنتج'}

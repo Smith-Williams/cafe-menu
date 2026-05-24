@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { EVA_BRAND } from '../lib/brand'
@@ -7,6 +7,7 @@ export function Layout() {
   const { totalQuantity, addedToast, dismissToast } = useCart()
   const { isOwner, profileReady, session } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const showAdminLink = profileReady && session && isOwner
 
@@ -17,7 +18,10 @@ export function Layout() {
           className="cart-toast cart-toast--visible"
           role="status"
           aria-live="polite"
-          onClick={dismissToast}
+          onClick={() => {
+            dismissToast()
+            navigate('/cart')
+          }}
         >
           <span className="cart-toast__ring" aria-hidden>
             <span className="cart-toast__icon">✓</span>
@@ -26,6 +30,7 @@ export function Layout() {
             <span className="cart-toast__title">أُضيف إلى السلة</span>
             <span className="cart-toast__msg">{addedToast}</span>
           </div>
+          <span className="cart-toast__cta">عرض السلة ←</span>
         </div>
       ) : null}
 

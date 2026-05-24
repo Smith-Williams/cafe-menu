@@ -18,6 +18,7 @@ type AdminTab = 'orders' | 'items' | 'categories' | 'settings'
 type CategoryDraft = {
   id?: string
   name_ar: string
+  icon: string
   sort_order: number
 }
 
@@ -32,7 +33,7 @@ type ItemDraft = {
   sort_order: number
 }
 
-const emptyCategory: CategoryDraft = { name_ar: '', sort_order: 0 }
+const emptyCategory: CategoryDraft = { name_ar: '', icon: '', sort_order: 0 }
 
 function emptyItem(categoryId: string): ItemDraft {
   return {
@@ -173,6 +174,7 @@ export function AdminDashboard() {
     setCategoryDraft({
       id: c.id,
       name_ar: c.name_ar,
+      icon: c.icon ?? '',
       sort_order: c.sort_order,
     })
     setCategoryModal(true)
@@ -183,6 +185,7 @@ export function AdminDashboard() {
     setError(null)
     const payload = {
       name_ar: categoryDraft.name_ar.trim(),
+      icon: categoryDraft.icon.trim() || null,
       sort_order: Number(categoryDraft.sort_order) || 0,
     }
     if (!payload.name_ar) return
@@ -696,6 +699,17 @@ export function AdminDashboard() {
                     setCategoryDraft((d) => ({ ...d, name_ar: e.target.value }))
                   }
                   required
+                />
+              </label>
+              <label>
+                أيقونة (إيموجي)
+                <input
+                  value={categoryDraft.icon}
+                  onChange={(e) =>
+                    setCategoryDraft((d) => ({ ...d, icon: e.target.value }))
+                  }
+                  placeholder="☕ 🧊 🥐"
+                  maxLength={4}
                 />
               </label>
               <label>

@@ -30,18 +30,21 @@ export interface Database {
         Row: {
           id: string
           name_ar: string
+          icon: string | null
           sort_order: number
           created_at: string
         }
         Insert: {
           id?: string
           name_ar: string
+          icon?: string | null
           sort_order?: number
           created_at?: string
         }
         Update: {
           id?: string
           name_ar?: string
+          icon?: string | null
           sort_order?: number
           created_at?: string
         }

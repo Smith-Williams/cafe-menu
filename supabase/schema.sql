@@ -28,6 +28,7 @@ create policy "profiles_update_own"
 create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   name_ar text not null,
+  icon text,
   sort_order int not null default 0,
   created_at timestamptz not null default now()
 );
