@@ -49,6 +49,132 @@ async function verifyPayment(paymentId: string) {
   return data
 }
 
+async function runOrderAfterPayment(
+  paymentId: string,
+  clearCart: () => void,
+  setState: (s: State) => void,
+  cancelled: () => boolean
+) {
+  const safe = (s: State) => {
+    if (!cancelled()) setState(s)
+  }
+
+  const cached = loadMoyasarReceipt(paymentId)
+  if (cached) {
+    safe({
+      kind: 'success',
+      orderId: cached.order_id,
+      customerName: cached.customer_name,
+      phone: cached.customer_phone,
+      total: cached.total,
+      lines: cached.lines,
+    })
+    clearCart()
+    return
+  }
+
+  const pending = loadPendingCheckout()
+  if (!pending) {
+    safe({
+      kind: 'error',
+      message:
+        'لم نجد بيانات الطلب في المتصفح. افتح الرابط من نفس الجهاز الذي أتممت منه الدفع، أو تواصل مع المقهى مع رقم الدفع.',
+    })
+    return
+  }
+
+  const payment = await verifyPayment(paymentId)
+  if (cancelled()) return
+
+  const paid = String(payment.status || '').toLowerCase() === 'paid'
+  const amountOk = Number(payment.amount) === pending.total_halalas
+  const currencyOk =
+    String(payment.currency || '').toUpperCase() === pending.currency.toUpperCase()
+
+  if (!paid || !amountOk || !currencyOk) {
+    safe({
+      kind: 'error',
+      message: paid
+        ? 'مبلغ الدفع لا يطابق الطلب. تواصل مع الدعم.'
+        : 'لم يُكمل الدفع بنجاح. الحالة: ' + (payment.status ?? 'غير معروف'),
+    })
+    return
+  }
+
+  const dup = loadMoyasarReceipt(paymentId)
+  if (dup) {
+    if (cancelled()) return
+    safe({
+      kind: 'success',
+      orderId: dup.order_id,
+      customerName: dup.customer_name,
+      phone: dup.customer_phone,
+      total: dup.total,
+      lines: dup.lines,
+    })
+    clearPendingCheckout()
+    clearCart()
+    return
+  }
+
+  const p_lines = pending.lines.map((l) => ({
+    menu_item_id: l.menu_item_id,
+    quantity: l.quantity,
+    unit_price: l.unit_price,
+    item_name_ar: l.item_name_ar,
+  }))
+
+  const notesWithPayment = pending.notes
+    ? `${pending.notes} | Moyasar: ${paymentId}`
+    : `Moyasar: ${paymentId}`
+
+  const { data: orderId, error: rpcErr } = await supabase.rpc('create_order_with_items', {
+    p_customer_name: pending.customer_name,
+    p_customer_phone: pending.customer_phone,
+    p_notes: notesWithPayment,
+    p_total_amount: pending.total_halalas / 100,
+    p_lines: p_lines,
+  })
+
+  if (cancelled()) return
+
+  if (rpcErr || !orderId) {
+    safe({
+      kind: 'error',
+      message:
+        rpcErr?.message ??
+        'تم الدفع بنجاح لكن تعذّر تسجيل الطلب. احفظ معرّف الدفع وتواصل معنا: ' + paymentId,
+    })
+    return
+  }
+
+  const receipt: MoyasarReceipt = {
+    version: 1,
+    order_id: String(orderId),
+    customer_name: pending.customer_name,
+    customer_phone: pending.customer_phone,
+    total: pending.total_halalas / 100,
+    lines: pending.lines.map((l) => ({
+      name: l.item_name_ar,
+      qty: l.quantity,
+      lineTotal: l.unit_price * l.quantity,
+    })),
+  }
+
+  saveMoyasarReceipt(paymentId, receipt)
+  clearPendingCheckout()
+  clearCart()
+
+  safe({
+    kind: 'success',
+    orderId: receipt.order_id,
+    customerName: receipt.customer_name,
+    phone: receipt.customer_phone,
+    total: receipt.total,
+    lines: receipt.lines,
+  })
+}
+
 export function OrderPaymentCallbackPage() {
   const [searchParams] = useSearchParams()
   const { clear } = useCart()
@@ -58,6 +184,7 @@ export function OrderPaymentCallbackPage() {
 
   useEffect(() => {
     let cancelled = false
+    const isCancelled = () => cancelled
 
     async function run() {
       const paymentId = searchParams.get('id')?.trim()
@@ -66,120 +193,15 @@ export function OrderPaymentCallbackPage() {
         return
       }
 
-      const cached = loadMoyasarReceipt(paymentId)
-      if (cached) {
-        setState({
-          kind: 'success',
-          orderId: cached.order_id,
-          customerName: cached.customer_name,
-          phone: cached.customer_phone,
-          total: cached.total,
-          lines: cached.lines,
-        })
-        clear()
-        return
-      }
-
-      const pending = loadPendingCheckout()
-      if (!pending) {
-        setState({
-          kind: 'error',
-          message:
-            'لم نجد بيانات الطلب في المتصفح. افتح الرابط من نفس الجهاز الذي أتممت منه الدفع، أو تواصل مع المقهى مع رقم الدفع.',
-        })
-        return
-      }
-
       try {
-        const payment = await verifyPayment(paymentId)
-        if (cancelled) return
-
-        const paid = String(payment.status || '').toLowerCase() === 'paid'
-        const amountOk = Number(payment.amount) === pending.total_halalas
-        const currencyOk =
-          String(payment.currency || '').toUpperCase() === pending.currency.toUpperCase()
-
-        if (!paid || !amountOk || !currencyOk) {
-          setState({
-            kind: 'error',
-            message: paid
-              ? 'مبلغ الدفع لا يطابق الطلب. تواصل مع الدعم.'
-              : 'لم يُكمل الدفع بنجاح. الحالة: ' + (payment.status ?? 'غير معروف'),
-          })
-          return
+        const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+        if (locks?.request) {
+          await locks.request(`eva-moyasar-order-${paymentId}`, () =>
+            runOrderAfterPayment(paymentId, clear, setState, isCancelled)
+          )
+        } else {
+          await runOrderAfterPayment(paymentId, clear, setState, isCancelled)
         }
-
-        const again = loadMoyasarReceipt(paymentId)
-        if (again) {
-          setState({
-            kind: 'success',
-            orderId: again.order_id,
-            customerName: again.customer_name,
-            phone: again.customer_phone,
-            total: again.total,
-            lines: again.lines,
-          })
-          clearPendingCheckout()
-          clear()
-          return
-        }
-
-        const p_lines = pending.lines.map((l) => ({
-          menu_item_id: l.menu_item_id,
-          quantity: l.quantity,
-          unit_price: l.unit_price,
-          item_name_ar: l.item_name_ar,
-        }))
-
-        const notesWithPayment = pending.notes
-          ? `${pending.notes} | Moyasar: ${paymentId}`
-          : `Moyasar: ${paymentId}`
-
-        const { data: orderId, error: rpcErr } = await supabase.rpc('create_order_with_items', {
-          p_customer_name: pending.customer_name,
-          p_customer_phone: pending.customer_phone,
-          p_notes: notesWithPayment,
-          p_total_amount: pending.total_halalas / 100,
-          p_lines: p_lines,
-        })
-
-        if (cancelled) return
-
-        if (rpcErr || !orderId) {
-          setState({
-            kind: 'error',
-            message:
-              rpcErr?.message ??
-              'تم الدفع بنجاح لكن تعذّر تسجيل الطلب. احفظ معرّف الدفع وتواصل معنا: ' + paymentId,
-          })
-          return
-        }
-
-        const receipt: MoyasarReceipt = {
-          version: 1,
-          order_id: String(orderId),
-          customer_name: pending.customer_name,
-          customer_phone: pending.customer_phone,
-          total: pending.total_halalas / 100,
-          lines: pending.lines.map((l) => ({
-            name: l.item_name_ar,
-            qty: l.quantity,
-            lineTotal: l.unit_price * l.quantity,
-          })),
-        }
-
-        saveMoyasarReceipt(paymentId, receipt)
-        clearPendingCheckout()
-        clear()
-
-        setState({
-          kind: 'success',
-          orderId: receipt.order_id,
-          customerName: receipt.customer_name,
-          phone: receipt.customer_phone,
-          total: receipt.total,
-          lines: receipt.lines,
-        })
       } catch (e) {
         if (!cancelled) {
           setState({

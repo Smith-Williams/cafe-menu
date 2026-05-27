@@ -1985,6 +1985,49 @@ textarea {
   border: 1px solid rgba(110, 207, 143, 0.25);
 }
 
+/* ——— Moyasar checkout ——— */
+.checkout-moyasar-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.checkout-pay-panel {
+  min-height: 320px;
+}
+
+.checkout-pay-amount {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.checkout-moyasar-host {
+  min-height: 200px;
+  margin: 0.5rem 0 1rem;
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.checkout-moyasar-host:empty {
+  min-height: 120px;
+}
+
+.checkout-callback {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.checkout-callback__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

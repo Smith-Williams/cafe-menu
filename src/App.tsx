@@ -7,6 +7,7 @@ import { MenuPage } from './pages/MenuPage'
 import { CartPage } from './pages/CartPage'
 import { CheckoutPage } from './pages/CheckoutPage'
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage'
+import { OrderPaymentCallbackPage } from './pages/OrderPaymentCallbackPage'
 import { AdminLogin } from './pages/admin/AdminLogin'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
 import { AdminGate } from './pages/admin/AdminGate'
@@ -22,6 +23,7 @@ export default function App() {
               <Route index element={<MenuPage />} />
               <Route path="cart" element={<CartPage />} />
               <Route path="checkout" element={<CheckoutPage />} />
+              <Route path="order-confirmation" element={<OrderPaymentCallbackPage />} />
               <Route path="order/:id" element={<OrderConfirmationPage />} />
               <Route
                 path="admin"

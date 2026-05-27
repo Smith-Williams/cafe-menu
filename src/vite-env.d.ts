@@ -4,17 +4,17 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string
   readonly VITE_SUPABASE_ANON_KEY: string
   /** Moyasar publishable key (pk_test_ / pk_live_) */
-  readonly VITE_MOYASAR_PUBLISHABLE_KEY: string
+  readonly VITE_MOYASAR_PUBLISHABLE_KEY?: string
   /**
    * Where Moyasar redirects after payment (must match dashboard allowlist if any).
    * Default in code: production Vercel URL.
    */
-  readonly VITE_MOYASAR_CALLBACK_URL: string
+  readonly VITE_MOYASAR_CALLBACK_URL?: string
   /**
    * Optional: full base URL to the verify API when testing locally against deployed backend.
    * Example: https://cafe-menu-indol.vercel.app/api
    */
-  readonly VITE_MOYASAR_VERIFY_API: string
+  readonly VITE_MOYASAR_VERIFY_API?: string
 }
 
 interface ImportMeta {
