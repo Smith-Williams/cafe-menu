@@ -1,7 +1,7 @@
 /** Session payload after customer submits details, before / after Moyasar redirect. */
 
 export const PENDING_CHECKOUT_KEY = 'eva_pending_checkout'
-export const COMPLETED_PAYMENT_KEY_PREFIX = 'eva_order_for_payment_'
+const RECEIPT_PREFIX = 'eva_moyasar_receipt_'
 
 export type PendingCheckoutLine = {
   menu_item_id: string
@@ -20,6 +20,21 @@ export type PendingCheckout = {
   currency: string
   lines: PendingCheckoutLine[]
   created_at: string
+}
+
+export type MoyasarReceiptLine = {
+  name: string
+  qty: number
+  lineTotal: number
+}
+
+export type MoyasarReceipt = {
+  version: 1
+  order_id: string
+  customer_name: string
+  customer_phone: string
+  total: number
+  lines: MoyasarReceiptLine[]
 }
 
 export function savePendingCheckout(data: PendingCheckout): void {
@@ -42,10 +57,18 @@ export function clearPendingCheckout(): void {
   sessionStorage.removeItem(PENDING_CHECKOUT_KEY)
 }
 
-export function setCompletedOrderForPayment(paymentId: string, orderId: string): void {
-  sessionStorage.setItem(`${COMPLETED_PAYMENT_KEY_PREFIX}${paymentId}`, orderId)
+export function saveMoyasarReceipt(paymentId: string, receipt: MoyasarReceipt): void {
+  sessionStorage.setItem(`${RECEIPT_PREFIX}${paymentId}`, JSON.stringify(receipt))
 }
 
-export function getCompletedOrderForPayment(paymentId: string): string | null {
-  return sessionStorage.getItem(`${COMPLETED_PAYMENT_KEY_PREFIX}${paymentId}`)
+export function loadMoyasarReceipt(paymentId: string): MoyasarReceipt | null {
+  try {
+    const raw = sessionStorage.getItem(`${RECEIPT_PREFIX}${paymentId}`)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as MoyasarReceipt
+    if (parsed?.version !== 1 || !parsed.order_id) return null
+    return parsed
+  } catch {
+    return null
+  }
 }
