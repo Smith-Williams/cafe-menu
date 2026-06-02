@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import type { MenuItem } from '../types/database'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
@@ -29,6 +29,29 @@ function MenuSkeleton() {
   )
 }
 
+const FEATURE_CARDS = [
+  {
+    icon: '☕',
+    title: 'قهوة مختصة يوميا',
+    text: 'تحميص دقيق ونكهات متوازنة لتجربة فاخرة في كل كوب.',
+  },
+  {
+    icon: '✦',
+    title: 'حبوب مختارة بعناية',
+    text: 'ننتقي أفضل المحاصيل لضمان جودة ثابتة وطعم غني.',
+  },
+  {
+    icon: '◌',
+    title: 'راحة وأناقة',
+    text: 'تصميم دافئ ومريح يمنحك تجربة مقهى راقية.',
+  },
+  {
+    icon: '⌁',
+    title: 'خدمة سريعة',
+    text: 'طلباتك جاهزة بسرعة مع اهتمام كبير بأدق التفاصيل.',
+  },
+] as const
+
 export function MenuPage() {
   const { addItem } = useCart()
   const { settings } = useSettings()
@@ -37,6 +60,8 @@ export function MenuPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeCategoryId, setActiveCategoryId] = useState<string | 'all'>('all')
+  const [contactSent, setContactSent] = useState(false)
+  const menuSectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -75,12 +100,31 @@ export function MenuPage() {
 
   const currency = settings.currency_code
 
+  function scrollToMenu() {
+    menuSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function submitContact(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setContactSent(true)
+    e.currentTarget.reset()
+    window.setTimeout(() => setContactSent(false), 3500)
+  }
+
   return (
     <>
-      <section className="page-hero page-hero--menu">
-        <p className="page-hero__eyebrow">{EVA_BRAND.nameEn}</p>
-        <h1 className="page-hero__title-compact">{EVA_BRAND.nameAr}</h1>
-        <p className="page-hero__tagline-en">{EVA_BRAND.taglineEn}</p>
+      <section className="lux-hero">
+        <div className="lux-hero__content">
+          <p className="lux-hero__eyebrow">{EVA_BRAND.nameEn}</p>
+          <h1>COFFEE & GO</h1>
+          <p className="lux-hero__subtitle">
+            أجواء فاخرة داكنة، قهوة متقنة، ونكهات تبقى في الذاكرة.
+          </p>
+          <button type="button" className="btn btn-primary btn-lg" onClick={scrollToMenu}>
+            شاهد القائمة
+          </button>
+        </div>
+        <div className="lux-hero__image" aria-hidden />
       </section>
 
       {error ? (
@@ -88,6 +132,24 @@ export function MenuPage() {
           تعذّر تحميل القائمة: {error}
         </div>
       ) : null}
+
+      <section className="feature-grid">
+        {FEATURE_CARDS.map((feature) => (
+          <article className="feature-card" key={feature.title}>
+            <div className="feature-card__icon" aria-hidden>
+              {feature.icon}
+            </div>
+            <h3>{feature.title}</h3>
+            <p>{feature.text}</p>
+          </article>
+        ))}
+      </section>
+
+      <section ref={menuSectionRef} className="menu-showcase">
+        <div className="menu-showcase__head">
+          <h2>منيو يدفّي المزاج</h2>
+          <p>صور كبيرة، تفاصيل واضحة، وتجربة طلب سريعة.</p>
+        </div>
 
       {loading ? (
         <>
@@ -143,6 +205,31 @@ export function MenuPage() {
           )}
         </>
       )}
+
+      </section>
+
+      <footer className="lux-footer panel">
+        <div className="lux-footer__info">
+          <h2>بانتظار زيارتكم</h2>
+          <p>يوميا من 7:30 صباحا وحتى 11:00 مساء</p>
+          <p dir="ltr">+966 50 000 0000</p>
+          <p>شارع القهوة - الرياض</p>
+        </div>
+        <form className="lux-footer__form" onSubmit={submitContact}>
+          <h3>تواصل معنا</h3>
+          {contactSent ? (
+            <div className="success-banner" role="status">
+              تم إرسال رسالتك بنجاح.
+            </div>
+          ) : null}
+          <input type="text" placeholder="الاسم" required />
+          <input type="tel" placeholder="رقم الجوال" required />
+          <textarea placeholder="رسالتك" required />
+          <button type="submit" className="btn btn-primary">
+            إرسال
+          </button>
+        </form>
+      </footer>
     </>
   )
 }

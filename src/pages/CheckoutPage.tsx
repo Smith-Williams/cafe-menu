@@ -58,8 +58,10 @@ export function CheckoutPage() {
         description: `EVA Coffee — طلب ${new Date().toISOString().slice(0, 10)}`,
         publishable_api_key: publishableKey,
         callback_url: callbackUrl,
+        // Official schemes: mada, visa, mastercard (see Moyasar form docs). Omit unionpay/amex
+        // unless enabled on the account — mis-listed networks can surface as unsupported card type.
         methods: ['creditcard', 'applepay', 'stcpay'],
-        supported_networks: ['visa', 'mastercard', 'mada', 'unionpay'],
+        supported_networks: ['mada', 'visa', 'mastercard'],
         language: 'ar',
         apple_pay: {
           country: 'SA',
