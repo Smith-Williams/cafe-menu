@@ -10,7 +10,7 @@ export const DEFAULT_CAFE_SETTINGS: CafeSettings = {
   cafe_name_ar: EVA_BRAND.nameAr,
   tagline_ar: EVA_BRAND.taglineAr,
   logo_url: null,
-  primary_color: EVA_BRAND.colors.gold,
+  primary_color: EVA_BRAND.colors.rose,
   accent_color: EVA_BRAND.colors.cream,
   currency_code: 'SAR',
   updated_at: new Date().toISOString(),
@@ -35,23 +35,24 @@ function lighten(hex: string, amount: number): string {
 export function applyCafeTheme(
   settings: Pick<CafeSettings, 'primary_color' | 'accent_color'>
 ) {
-  const gold = settings.primary_color?.trim() || EVA_BRAND.colors.gold
+  const rose = settings.primary_color?.trim() || EVA_BRAND.colors.rose
   const cream = settings.accent_color?.trim() || EVA_BRAND.colors.cream
-  const rgb = hexToRgb(gold)
+  const rgb = hexToRgb(rose)
   const root = document.documentElement
 
-  root.style.setProperty('--gold', gold)
+  root.style.setProperty('--rose', rose)
+  root.style.setProperty('--gold', rose)
   root.style.setProperty('--cream', cream)
-  root.style.setProperty('--accent', gold)
+  root.style.setProperty('--accent', rose)
   root.style.setProperty('--accent-deep', EVA_BRAND.colors.primary)
-  root.style.setProperty('--accent-hover', lighten(gold, 0.14))
+  root.style.setProperty('--accent-hover', lighten(rose, 0.12))
   root.style.setProperty(
     '--accent-glow',
-    rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)` : 'rgba(201, 162, 39, 0.35)'
+    rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)` : 'rgba(232, 160, 160, 0.35)'
   )
   root.style.setProperty(
     '--gold-glow',
-    rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)` : 'rgba(201, 162, 39, 0.22)'
+    rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)` : 'rgba(232, 160, 160, 0.22)'
   )
 }
 

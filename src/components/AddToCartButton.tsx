@@ -40,7 +40,7 @@ export function AddToCartButton({ item, onAdd }: Props) {
         {justAdded ? '✓' : '+'}
       </span>
       <span className="btn-add-cart__label">
-        {justAdded ? 'تمت الإضافة' : 'أضف للسلة'}
+        {justAdded ? 'تم' : 'أضف'}
       </span>
     </button>
   )
