@@ -21,8 +21,17 @@ export function MenuItemImage({ src, alt }: Props) {
         />
       ) : (
         <div className="menu-card-image__placeholder" aria-hidden>
-          <span className="menu-card-image__icon">☕</span>
-          <span className="menu-card-image__hint">صورة المنتج</span>
+          <svg
+            className="menu-card-image__svg"
+            viewBox="0 0 48 48"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.25"
+          >
+            <path d="M14 32h20c0 10-4 16-10 16s-10-6-10-16z" />
+            <ellipse cx="24" cy="32" rx="10" ry="2" />
+            <path d="M20 18c0-4 2-7 6-7s6 3 6 7" opacity="0.5" />
+          </svg>
         </div>
       )}
       <div className="menu-card-image__shade" aria-hidden />

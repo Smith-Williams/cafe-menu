@@ -1,5 +1,6 @@
 import { useSettings } from '../context/SettingsContext'
 import { EVA_BRAND } from '../lib/brand'
+import { HeroVisual } from './HeroVisual'
 
 export function SiteHero() {
   const { settings } = useSettings()
@@ -8,24 +9,22 @@ export function SiteHero() {
 
   return (
     <section className="landing-hero" id="top">
+      <div className="landing-hero__ambient" aria-hidden />
       <div className="landing-hero__content">
         <p className="landing-hero__brand-en">{EVA_BRAND.nameEn}</p>
+        <div className="landing-hero__rule" aria-hidden />
         <h1 className="landing-hero__title">{title}</h1>
         <p className="landing-hero__tagline">{tagline}</p>
-        <a href="#menu" className="btn btn-primary btn-hero">
-          تصفّح القائمة
-        </a>
+        <div className="landing-hero__actions">
+          <a href="#menu" className="btn btn-primary btn-hero">
+            تصفّح القائمة
+          </a>
+          <a href="#about" className="btn btn-ghost btn-hero-secondary">
+            اكتشف المزيد
+          </a>
+        </div>
       </div>
-      <div className="landing-hero__visual">
-        <img
-          src="/hero-coffee.png"
-          alt=""
-          className="landing-hero__image"
-          width={640}
-          height={640}
-          fetchPriority="high"
-        />
-      </div>
+      <HeroVisual />
     </section>
   )
 }
