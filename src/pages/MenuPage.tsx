@@ -87,6 +87,11 @@ export function MenuPage() {
           <h2 id="menu-heading" className="menu-section__title">
             قائمة تدفئ القلب
           </h2>
+          {!loading && items.length > 0 ? (
+            <p className="menu-section__subtitle">
+              {items.filter((i) => i.available).length} صنف · {categories.length} فئات
+            </p>
+          ) : null}
         </header>
 
         {error ? (
@@ -127,6 +132,7 @@ export function MenuPage() {
                     <MenuItemImage
                       src={item.image_url}
                       alt={item.name_ar || 'صورة المنتج'}
+                      title={item.name_ar}
                     />
                     <div className="menu-card-body">
                       <h3 className="menu-card-title">

@@ -21,7 +21,9 @@ export function getCategoryIcon(category: CategoryDisplay): string {
   const name = category.name_ar.toLowerCase()
   if (/ساخن|hot|قهوة|espresso|coffee/.test(name)) return '☕'
   if (/بارد|cold|آيس|ice|مثلج/.test(name)) return '🧊'
-  if (/طعام|food|مخبوز|حلو|ساندو|وجبات|معجنات/.test(name)) return '🥐'
+  if (/حلو|حلى|dessert|كيك/.test(name)) return '🍰'
+  if (/إفطار|فطور|breakfast/.test(name)) return '🍳'
+  if (/طعام|food|مخبوز|ساندو|وجبات|معجنات/.test(name)) return '🥐'
   return '◆'
 }
 
@@ -33,7 +35,9 @@ export function categoryToTab(category: CategoryDisplay): CategoryTab {
   const n = labelAr.toLowerCase()
   if (/ساخن|hot/.test(n)) labelEn = 'Hot Drinks'
   else if (/بارد|cold/.test(n)) labelEn = 'Cold Drinks'
-  else if (/طعام|food|مخبوز/.test(n)) labelEn = 'Food'
+  else if (/حلو|حلى|dessert/.test(n)) labelEn = 'Desserts'
+  else if (/إفطار|فطور|breakfast/.test(n)) labelEn = 'Breakfast'
+  else if (/طعام|food|مخبوز|وجبات/.test(n)) labelEn = 'Food'
 
   return { id: category.id, labelAr, labelEn, icon }
 }

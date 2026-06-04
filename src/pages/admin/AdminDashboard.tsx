@@ -958,16 +958,20 @@ export function AdminDashboard() {
                 />
               </label>
               <label>
-                رابط الصورة
+                رابط الصورة (صوركم فقط)
                 <input
                   type="url"
                   value={itemDraft.image_url}
                   onChange={(e) =>
                     setItemDraft((d) => ({ ...d, image_url: e.target.value }))
                   }
-                  placeholder="https://example.com/photo.jpg"
+                  placeholder="رابط من Supabase Storage أو موقعكم"
+                  dir="ltr"
                 />
               </label>
+              <p className="admin-hint" style={{ margin: '-0.35rem 0 0' }}>
+                ارفع الصورة إلى Supabase Storage (أو استضافة خاصة) ثم الصق الرابط العام هنا.
+              </p>
               {itemDraft.image_url.trim() ? (
                 <div className="image-preview">
                   <img

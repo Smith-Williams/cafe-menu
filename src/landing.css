@@ -462,6 +462,12 @@
   background: linear-gradient(90deg, var(--rose), transparent);
 }
 
+.menu-section__subtitle {
+  margin: 0.65rem 0 0;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
 /* ——— Menu cards (landing) ——— */
 .landing-page .menu-grid {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -488,17 +494,6 @@
 
 .landing-page .menu-card-image::after {
   display: none;
-}
-
-.landing-page .menu-card-image__placeholder {
-  background: linear-gradient(160deg, #1a1a1a 0%, #111 100%);
-  color: rgba(232, 160, 160, 0.35);
-}
-
-.landing-page .menu-card-image__svg {
-  width: 3rem;
-  height: 3rem;
-  opacity: 0.5;
 }
 
 .landing-page .menu-card-body {

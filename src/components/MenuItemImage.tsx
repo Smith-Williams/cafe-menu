@@ -3,11 +3,20 @@ import { useState } from 'react'
 type Props = {
   src: string | null
   alt: string
+  /** Shown in placeholder when no image (first letter) */
+  title?: string
 }
 
-export function MenuItemImage({ src, alt }: Props) {
+function placeholderLetter(title?: string): string {
+  const t = title?.trim()
+  if (!t) return '☕'
+  return t.charAt(0)
+}
+
+export function MenuItemImage({ src, alt, title }: Props) {
   const [failed, setFailed] = useState(false)
-  const showImage = Boolean(src) && !failed
+  const showImage = Boolean(src?.trim()) && !failed
+  const letter = placeholderLetter(title)
 
   return (
     <div className="menu-card-image">
@@ -21,17 +30,7 @@ export function MenuItemImage({ src, alt }: Props) {
         />
       ) : (
         <div className="menu-card-image__placeholder" aria-hidden>
-          <svg
-            className="menu-card-image__svg"
-            viewBox="0 0 48 48"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.25"
-          >
-            <path d="M14 32h20c0 10-4 16-10 16s-10-6-10-16z" />
-            <ellipse cx="24" cy="32" rx="10" ry="2" />
-            <path d="M20 18c0-4 2-7 6-7s6 3 6 7" opacity="0.5" />
-          </svg>
+          <span className="menu-card-image__letter">{letter}</span>
         </div>
       )}
       <div className="menu-card-image__shade" aria-hidden />
