@@ -14,24 +14,13 @@ import {
   fetchCafeSettings,
   saveCafeSettings,
 } from '../lib/cafeSettings'
+import type { CafeSettingsPatch } from '../lib/cafeSettingsFields'
 
 type SettingsContextValue = {
   settings: CafeSettings
   loading: boolean
   refresh: () => Promise<void>
-  updateSettings: (
-    patch: Partial<
-      Pick<
-        CafeSettings,
-        | 'cafe_name_ar'
-        | 'tagline_ar'
-        | 'logo_url'
-        | 'primary_color'
-        | 'accent_color'
-        | 'currency_code'
-      >
-    >
-  ) => Promise<{ error: string | null }>
+  updateSettings: (patch: Partial<CafeSettingsPatch>) => Promise<{ error: string | null }>
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null)
@@ -51,20 +40,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     void refresh()
   }, [refresh])
 
-  const updateSettings = useCallback(
-    async (
-      patch: Partial<
-        Pick<
-          CafeSettings,
-          | 'cafe_name_ar'
-          | 'tagline_ar'
-          | 'logo_url'
-          | 'primary_color'
-          | 'accent_color'
-          | 'currency_code'
-        >
-      >
-    ) => {
+  const updateSettings = useCallback(async (patch: Partial<CafeSettingsPatch>) => {
       const { error } = await saveCafeSettings(patch)
       if (!error) {
         setSettings((prev) => {

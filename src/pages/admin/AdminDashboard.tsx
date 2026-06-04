@@ -12,6 +12,7 @@ import {
   type OrderWithItems,
 } from '../../lib/normalizeOrder'
 import { ORDER_STATUSES, orderStatusLabel } from '../../lib/orderStatus'
+import { settingsDraftFrom, type CafeSettingsDraft } from '../../lib/cafeSettingsFields'
 import { useOrderRealtime } from '../../hooks/useOrderRealtime'
 import { NewOrderToast } from '../../components/admin/NewOrderToast'
 import { OrderNotificationBell } from '../../components/admin/OrderNotificationBell'
@@ -75,13 +76,9 @@ export function AdminDashboard() {
   const [itemModal, setItemModal] = useState(false)
   const [itemDraft, setItemDraft] = useState<ItemDraft>(emptyItem(''))
 
-  const [settingsDraft, setSettingsDraft] = useState({
-    cafe_name_ar: settings.cafe_name_ar,
-    tagline_ar: settings.tagline_ar ?? '',
-    logo_url: settings.logo_url ?? '',
-    primary_color: settings.primary_color,
-    accent_color: settings.accent_color,
-  })
+  const [settingsDraft, setSettingsDraft] = useState<CafeSettingsDraft>(() =>
+    settingsDraftFrom(settings)
+  )
   const [savingSettings, setSavingSettings] = useState(false)
   const [newOrderToast, setNewOrderToast] = useState<OrderWithItems | null>(null)
   const [bellRinging, setBellRinging] = useState(false)
@@ -116,13 +113,7 @@ export function AdminDashboard() {
   }, [])
 
   useEffect(() => {
-    setSettingsDraft({
-      cafe_name_ar: settings.cafe_name_ar,
-      tagline_ar: settings.tagline_ar ?? '',
-      logo_url: settings.logo_url ?? '',
-      primary_color: settings.primary_color,
-      accent_color: settings.accent_color,
-    })
+    setSettingsDraft(settingsDraftFrom(settings))
   }, [settings])
 
   const load = useCallback(async () => {
@@ -347,6 +338,13 @@ export function AdminDashboard() {
       logo_url: settingsDraft.logo_url.trim() || null,
       primary_color: settingsDraft.primary_color.trim(),
       accent_color: settingsDraft.accent_color.trim(),
+      phone_display: settingsDraft.phone_display.trim() || null,
+      phone_tel: settingsDraft.phone_tel.trim() || null,
+      whatsapp_number: settingsDraft.whatsapp_number.trim() || null,
+      business_hours: settingsDraft.business_hours.trim() || null,
+      address_ar: settingsDraft.address_ar.trim() || null,
+      maps_url: settingsDraft.maps_url.trim() || null,
+      instagram_url: settingsDraft.instagram_url.trim() || null,
     })
     setSavingSettings(false)
     if (err) setError(err)
@@ -656,6 +654,7 @@ export function AdminDashboard() {
               </header>
 
               <form onSubmit={saveSettingsForm} className="form-grid settings-form">
+                <h3 className="settings-form__section">الهوية والألوان</h3>
                 <label>
                   اسم المقهى
                   <input
@@ -747,6 +746,89 @@ export function AdminDashboard() {
                     </div>
                   </label>
                 </div>
+
+                <h3 className="settings-form__section">التواصل والموقع</h3>
+                <p className="admin-hint settings-form__hint">
+                  يظهر للزوار في التذييل والدفع. رقم الواتساب: أرقام فقط (مثال 966501234567).
+                </p>
+                <label>
+                  رقم الجوال (للعرض)
+                  <input
+                    value={settingsDraft.phone_display}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, phone_display: e.target.value }))
+                    }
+                    placeholder="+966 50 123 4567"
+                    dir="ltr"
+                  />
+                </label>
+                <label>
+                  رقم الاتصال (tel)
+                  <input
+                    value={settingsDraft.phone_tel}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, phone_tel: e.target.value }))
+                    }
+                    placeholder="+966501234567"
+                    dir="ltr"
+                  />
+                </label>
+                <label>
+                  واتساب (أرقام فقط)
+                  <input
+                    value={settingsDraft.whatsapp_number}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, whatsapp_number: e.target.value }))
+                    }
+                    placeholder="966501234567"
+                    dir="ltr"
+                  />
+                </label>
+                <label>
+                  ساعات العمل
+                  <input
+                    value={settingsDraft.business_hours}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, business_hours: e.target.value }))
+                    }
+                    placeholder="يومياً ٧:٣٠ ص – ٩:٠٠ م"
+                  />
+                </label>
+                <label className="field--full">
+                  العنوان
+                  <input
+                    value={settingsDraft.address_ar}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, address_ar: e.target.value }))
+                    }
+                    placeholder="الرياض، حي …، شارع …"
+                  />
+                </label>
+                <label>
+                  رابط خرائط Google
+                  <input
+                    type="url"
+                    value={settingsDraft.maps_url}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, maps_url: e.target.value }))
+                    }
+                    placeholder="https://maps.google.com/…"
+                    dir="ltr"
+                  />
+                </label>
+                <label>
+                  إنستغرام
+                  <input
+                    type="url"
+                    value={settingsDraft.instagram_url}
+                    onChange={(e) =>
+                      setSettingsDraft((d) => ({ ...d, instagram_url: e.target.value }))
+                    }
+                    placeholder="https://instagram.com/…"
+                    dir="ltr"
+                  />
+                </label>
+
                 <button type="submit" className="btn btn-primary" disabled={savingSettings}>
                   {savingSettings ? 'جاري الحفظ…' : 'حفظ الإعدادات'}
                 </button>

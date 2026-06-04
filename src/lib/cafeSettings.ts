@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { CafeSettings } from '../types/database'
 import { EVA_BRAND } from './brand'
+import type { CafeSettingsPatch } from './cafeSettingsFields'
 
 /** Singleton cafe_settings row id (fixed UUID). */
 export const CAFE_SETTINGS_ID = '00000000-0000-0000-0000-000000000001'
@@ -13,6 +14,13 @@ export const DEFAULT_CAFE_SETTINGS: CafeSettings = {
   primary_color: EVA_BRAND.colors.rose,
   accent_color: EVA_BRAND.colors.cream,
   currency_code: 'SAR',
+  phone_display: EVA_BRAND.phone,
+  phone_tel: EVA_BRAND.phoneTel,
+  whatsapp_number: '966500000000',
+  business_hours: EVA_BRAND.hours,
+  address_ar: null,
+  maps_url: null,
+  instagram_url: null,
   updated_at: new Date().toISOString(),
 }
 
@@ -68,17 +76,7 @@ export async function fetchCafeSettings(): Promise<CafeSettings> {
 }
 
 export async function saveCafeSettings(
-  patch: Partial<
-    Pick<
-      CafeSettings,
-      | 'cafe_name_ar'
-      | 'tagline_ar'
-      | 'logo_url'
-      | 'primary_color'
-      | 'accent_color'
-      | 'currency_code'
-    >
-  >
+  patch: Partial<CafeSettingsPatch>
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('cafe_settings')

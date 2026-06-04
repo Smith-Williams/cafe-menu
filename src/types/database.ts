@@ -122,6 +122,13 @@ export interface Database {
           primary_color: string
           accent_color: string
           currency_code: string
+          phone_display: string | null
+          phone_tel: string | null
+          whatsapp_number: string | null
+          business_hours: string | null
+          address_ar: string | null
+          maps_url: string | null
+          instagram_url: string | null
           updated_at: string
         }
         Insert: {
@@ -132,6 +139,13 @@ export interface Database {
           primary_color?: string
           accent_color?: string
           currency_code?: string
+          phone_display?: string | null
+          phone_tel?: string | null
+          whatsapp_number?: string | null
+          business_hours?: string | null
+          address_ar?: string | null
+          maps_url?: string | null
+          instagram_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -142,6 +156,13 @@ export interface Database {
           primary_color?: string
           accent_color?: string
           currency_code?: string
+          phone_display?: string | null
+          phone_tel?: string | null
+          whatsapp_number?: string | null
+          business_hours?: string | null
+          address_ar?: string | null
+          maps_url?: string | null
+          instagram_url?: string | null
           updated_at?: string
         }
       }

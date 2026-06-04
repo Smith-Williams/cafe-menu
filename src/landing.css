@@ -578,6 +578,33 @@
   color: var(--rose);
 }
 
+.site-footer__address {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  text-decoration: none;
+  display: block;
+  max-width: 22rem;
+}
+
+a.site-footer__address:hover {
+  color: var(--rose);
+}
+
+.site-footer__contact-lead {
+  margin: 0 0 1.25rem;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.site-footer__cta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .site-footer__social {
   display: flex;
   gap: 0.65rem;

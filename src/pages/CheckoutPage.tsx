@@ -5,7 +5,10 @@ import { useSettings } from '../context/SettingsContext'
 import { EVA_BRAND } from '../lib/brand'
 import { formatMoney } from '../lib/format'
 import { loadMoyasarScript } from '../lib/loadMoyasarScript'
+import { PickupNotice } from '../components/PickupNotice'
 import { savePendingCheckout, type PendingCheckout } from '../lib/pendingCheckout'
+
+const PICKUP_NOTE = 'استلام من الفرع'
 
 const DEFAULT_MOYASAR_PK =
   'pk_test_3GvqyeppvaM5aSLWKyBaUakpFJqCXUUgFX9VbB4N'
@@ -114,11 +117,14 @@ export function CheckoutPage() {
       return
     }
 
+    const userNotes = notes.trim()
+    const orderNotes = userNotes ? `${PICKUP_NOTE} | ${userNotes}` : PICKUP_NOTE
+
     const pending: PendingCheckout = {
       version: 1,
       customer_name: trimmedName,
       customer_phone: trimmedPhone,
-      notes: notes.trim() || null,
+      notes: orderNotes,
       total_halalas: halalas,
       currency: 'SAR',
       lines: lines.map((line) => ({
@@ -156,7 +162,7 @@ export function CheckoutPage() {
         <h1>إتمام الطلب</h1>
         <p>
           {step === 'details'
-            ? 'أدخل بياناتك ثم أكمل الدفع بأمان عبر Moyasar.'
+            ? 'أدخل بياناتك للاستلام من الفرع، ثم أكمل الدفع بأمان.'
             : 'اختر طريقة الدفع — بطاقة، Apple Pay، أو STC Pay.'}
         </p>
       </section>
@@ -164,7 +170,9 @@ export function CheckoutPage() {
       <div className="checkout-layout">
         {step === 'details' ? (
           <form onSubmit={goToPayment} className="checkout-form panel">
-            <h2 className="checkout-section-title">بيانات التوصيل</h2>
+            <h2 className="checkout-section-title">بيانات الطلب</h2>
+
+            <PickupNotice />
 
             {error ? (
               <div className="error-banner" role="alert">
@@ -261,6 +269,7 @@ export function CheckoutPage() {
         )}
 
         <aside className="checkout-summary panel">
+          <PickupNotice compact />
           <h2 className="checkout-section-title">ملخص الطلب</h2>
           <p className="checkout-summary__count">{lines.length} صنف</p>
           <ul className="checkout-summary__list">

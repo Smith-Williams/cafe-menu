@@ -150,9 +150,16 @@ create table if not exists public.cafe_settings (
   cafe_name_ar text not null default 'إيفا كافيه',
   tagline_ar text default 'حيث تروي كل رشفة قصة',
   logo_url text,
-  primary_color text not null default '#C9A227',
+  primary_color text not null default '#e8a0a0',
   accent_color text not null default '#F5F1E8',
   currency_code text not null default 'SAR',
+  phone_display text,
+  phone_tel text,
+  whatsapp_number text,
+  business_hours text,
+  address_ar text,
+  maps_url text,
+  instagram_url text,
   updated_at timestamptz not null default now()
 );
 
