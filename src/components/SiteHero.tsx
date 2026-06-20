@@ -27,10 +27,7 @@ export function SiteHero() {
         <p className="landing-hero__tagline">{tagline}</p>
         <div className="landing-hero__actions">
           <a href="#menu" className="btn btn-primary btn-hero">
-            تصفّح القائمة
-          </a>
-          <a href="#about" className="btn btn-ghost btn-hero-secondary">
-            كيف تطلب؟
+            اطلب الآن
           </a>
         </div>
       </div>
