@@ -8,100 +8,91 @@ export function CartPage() {
   const { settings } = useSettings()
   const currency = settings.currency_code
 
+  if (lines.length === 0) {
+    return (
+      <>
+        <section className="page-hero page-hero--compact">
+          <h1>سلة الطلبات</h1>
+        </section>
+        <div className="cart-empty">
+          <div className="cart-empty__icon" aria-hidden>🛒</div>
+          <p className="cart-empty__msg">سلتك فارغة</p>
+          <p className="cart-empty__sub">أضف شيئاً من القائمة لتبدأ</p>
+          <Link to="/" className="btn btn-primary">تصفّح القائمة</Link>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <section className="page-hero page-hero--compact">
         <h1>سلة الطلبات</h1>
-        <p>راجع العناصر ثم أكمل الطلب لتأكيده.</p>
+        <p>{totalQuantity} صنف</p>
       </section>
 
-      <div className="panel">
-        <h2>العناصر ({totalQuantity})</h2>
-
-        {lines.length === 0 ? (
-          <div className="empty-state">
-            السلة فارغة.
-            <div style={{ marginTop: '1rem' }}>
-              <Link to="/" className="btn btn-primary">
-                العودة إلى القائمة
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            {lines.map((line) => (
-              <div key={line.menuItem.id} className="cart-row">
-                <div>
-                  <strong>{line.menuItem.name_ar}</strong>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    {formatMoney(Number(line.menuItem.price), currency)} لكل وحدة
-                  </div>
+      <div className="cart-page">
+        <div className="cart-items">
+          {lines.map((line) => (
+            <div key={line.menuItem.id} className="cart-item">
+              {line.menuItem.image_url ? (
+                <img
+                  className="cart-item__img"
+                  src={line.menuItem.image_url}
+                  alt={line.menuItem.name_ar}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="cart-item__img cart-item__img--placeholder">
+                  {(line.menuItem.name_ar?.[0]) ?? '☕'}
                 </div>
-                <div style={{ textAlign: 'left' as const }}>
-                  <div className="qty-controls" aria-label="تعديل الكمية">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setQuantity(line.menuItem.id, line.quantity - 1)
-                      }
-                      aria-label="تقليل"
-                    >
-                      −
-                    </button>
-                    <span style={{ minWidth: '1.5rem', textAlign: 'center' }}>
-                      {line.quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setQuantity(line.menuItem.id, line.quantity + 1)
-                      }
-                      aria-label="زيادة"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div style={{ marginTop: '0.35rem', fontWeight: 700 }}>
-                    {formatMoney(Number(line.menuItem.price) * line.quantity, currency)}
-                  </div>
+              )}
+
+              <div className="cart-item__info">
+                <p className="cart-item__name">{line.menuItem.name_ar}</p>
+                <p className="cart-item__unit">{formatMoney(Number(line.menuItem.price), currency)} × {line.quantity}</p>
+              </div>
+
+              <div className="cart-item__controls">
+                <div className="qty-controls" aria-label="تعديل الكمية">
                   <button
                     type="button"
-                    className="btn btn-danger"
-                    style={{ marginTop: '0.5rem', fontSize: '0.85rem', padding: '0.35rem 0.65rem' }}
-                    onClick={() => removeLine(line.menuItem.id)}
-                  >
-                    حذف
-                  </button>
+                    onClick={() => setQuantity(line.menuItem.id, line.quantity - 1)}
+                    aria-label="تقليل"
+                  >−</button>
+                  <span>{line.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(line.menuItem.id, line.quantity + 1)}
+                    aria-label="زيادة"
+                  >+</button>
                 </div>
+                <p className="cart-item__total">
+                  {formatMoney(Number(line.menuItem.price) * line.quantity, currency)}
+                </p>
+                <button
+                  type="button"
+                  className="cart-item__remove"
+                  onClick={() => removeLine(line.menuItem.id)}
+                  aria-label={`حذف ${line.menuItem.name_ar}`}
+                >✕</button>
               </div>
-            ))}
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: '1.25rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid var(--border)',
-              }}
-            >
-              <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>الإجمالي</span>
-              <span className="price" style={{ fontSize: '1.2rem' }}>
-                {formatMoney(subtotal, currency)}
-              </span>
             </div>
+          ))}
+        </div>
 
-            <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <Link to="/checkout" className="btn btn-primary">
-                متابعة الطلب
-              </Link>
-              <Link to="/" className="btn btn-ghost">
-                إضافة المزيد
-              </Link>
-            </div>
-          </>
-        )}
+        <div className="cart-footer">
+          <div className="cart-footer__row">
+            <span>الإجمالي</span>
+            <span className="price">{formatMoney(subtotal, currency)}</span>
+          </div>
+          <Link to="/checkout" className="btn btn-primary cart-footer__checkout">
+            متابعة الطلب ←
+          </Link>
+          <Link to="/" className="btn btn-ghost cart-footer__more">
+            إضافة المزيد
+          </Link>
+        </div>
       </div>
     </>
   )

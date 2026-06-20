@@ -11,7 +11,7 @@ import {
   mergeOrdersWithItems,
   type OrderWithItems,
 } from '../../lib/normalizeOrder'
-import { ORDER_STATUSES, orderStatusLabel } from '../../lib/orderStatus'
+import { orderStatusLabel } from '../../lib/orderStatus'
 import { settingsDraftFrom, type CafeSettingsDraft } from '../../lib/cafeSettingsFields'
 import { writeCategory, writeMenuItem } from '../../lib/dbWrite'
 import { useOrderRealtime } from '../../hooks/useOrderRealtime'
@@ -487,25 +487,42 @@ export function AdminDashboard() {
                       </div>
 
                       <div className="order-card__actions">
-                        {ORDER_STATUSES.map((status) => (
+                        {order.status === 'pending' && (
                           <button
-                            key={status}
                             type="button"
-                            className={`btn btn-ghost btn-sm ${order.status === status ? 'active' : ''}`}
-                            disabled={order.status === status}
-                            onClick={() => void updateOrderStatus(order.id, status)}
+                            className="order-action-btn order-action-btn--confirm"
+                            onClick={() => void updateOrderStatus(order.id, 'confirmed')}
                           >
-                            {orderStatusLabel(status)}
+                            ✅ تأكيد الطلب وبدء التحضير
                           </button>
-                        ))}
+                        )}
+                        {order.status === 'confirmed' && (
+                          <button
+                            type="button"
+                            className="order-action-btn order-action-btn--ready"
+                            onClick={() => void updateOrderStatus(order.id, 'completed')}
+                          >
+                            🎉 تسليم واكتمال الطلب
+                          </button>
+                        )}
+                        {order.status === 'completed' && (
+                          <div className="order-action-btn order-action-btn--complete">
+                            ✓ مكتمل
+                          </div>
+                        )}
+                        {order.status === 'cancelled' && (
+                          <div className="order-action-btn order-action-btn--complete">
+                            ✗ ملغي
+                          </div>
+                        )}
                         {order.customer_phone ? (
                           <a
                             href={`https://wa.me/${order.customer_phone.replace(/[^0-9]/g, '').replace(/^0/, '966')}?text=${encodeURIComponent(`مرحباً ${order.customer_name}، طلبك جاهز من EVA Coffee 🎉`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="wa-notify-btn"
+                            className="order-action-btn order-action-btn--secondary"
                           >
-                            💬 واتساب
+                            💬 إبلاغ عبر واتساب
                           </a>
                         ) : null}
                       </div>

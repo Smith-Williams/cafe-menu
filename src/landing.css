@@ -148,6 +148,13 @@
   align-items: flex-start;
 }
 
+.landing-hero__greeting {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 .landing-hero__brand-en {
   margin: 0 0 0.85rem;
   font-family: var(--font-latin);
