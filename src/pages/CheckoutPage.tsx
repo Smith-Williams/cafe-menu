@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
 import { EVA_BRAND } from '../lib/brand'
@@ -7,6 +7,7 @@ import { formatMoney } from '../lib/format'
 import { loadMoyasarScript } from '../lib/loadMoyasarScript'
 import { PickupNotice } from '../components/PickupNotice'
 import { savePendingCheckout, type PendingCheckout } from '../lib/pendingCheckout'
+import { supabase } from '../lib/supabase'
 
 const PICKUP_NOTE = 'استلام من الفرع'
 
@@ -15,17 +16,20 @@ const DEFAULT_MOYASAR_PK =
 const DEFAULT_CALLBACK = 'https://cafe-menu-indol.vercel.app/order-confirmation'
 
 type Step = 'details' | 'pay'
+type PayMethod = 'online' | 'cash'
 
 export function CheckoutPage() {
-  const { lines, subtotal } = useCart()
+  const { lines, subtotal, clear } = useCart()
   const { settings } = useSettings()
   const currency = settings.currency_code
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [tableNo, setTableNo] = useState('')
   const [notes, setNotes] = useState('')
+  const [payMethod, setPayMethod] = useState<PayMethod>('online')
   const [step, setStep] = useState<Step>('details')
   const [error, setError] = useState<string | null>(null)
+  const [cashLoading, setCashLoading] = useState(false)
   const [moyasarLoading, setMoyasarLoading] = useState(false)
   const moyasarInitRef = useRef(false)
   const formHostRef = useRef<HTMLDivElement>(null)
@@ -35,7 +39,49 @@ export function CheckoutPage() {
   const callbackUrl =
     import.meta.env.VITE_MOYASAR_CALLBACK_URL || DEFAULT_CALLBACK
 
+  const navigate = useNavigate()
   const halalas = Math.round(subtotal * 100)
+
+  async function placeCashOrder(orderNotes: string) {
+    setCashLoading(true)
+    setError(null)
+    try {
+      const pLines = lines.map((l) => ({
+        menu_item_id: l.menuItem.id,
+        quantity: l.quantity,
+        unit_price: Number(l.menuItem.price),
+        item_name_ar: l.menuItem.name_ar,
+      }))
+      const { data: orderId, error: rpcErr } = await supabase.rpc('create_order_with_items', {
+        p_customer_name: name.trim(),
+        p_customer_phone: phone.trim(),
+        p_notes: orderNotes,
+        p_total_amount: subtotal,
+        p_lines: pLines,
+      })
+      if (rpcErr || !orderId) {
+        setError(rpcErr?.message ?? 'تعذّر تسجيل الطلب، حاول مجدداً.')
+        return
+      }
+      clear()
+      navigate(`/order-confirmation/${orderId}`, {
+        state: {
+          customerName: name.trim(),
+          phone: phone.trim(),
+          total: subtotal,
+          lines: lines.map((l) => ({
+            name: l.menuItem.name_ar,
+            qty: l.quantity,
+            lineTotal: Number(l.menuItem.price) * l.quantity,
+          })),
+        },
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'حدث خطأ غير متوقع')
+    } finally {
+      setCashLoading(false)
+    }
+  }
 
   const initMoyasar = useCallback(async () => {
     if (moyasarInitRef.current || !formHostRef.current) return
@@ -126,7 +172,13 @@ export function CheckoutPage() {
 
     const userNotes = notes.trim()
     const tablePart = tableNo.trim() ? `طاولة ${tableNo.trim()}` : PICKUP_NOTE
-    const orderNotes = userNotes ? `${tablePart} | ${userNotes}` : tablePart
+    const payPart = payMethod === 'cash' ? 'كاش عند الاستلام' : null
+    const orderNotes = [tablePart, payPart, userNotes || null].filter(Boolean).join(' | ')
+
+    if (payMethod === 'cash') {
+      void placeCashOrder(orderNotes)
+      return
+    }
 
     const pending: PendingCheckout = {
       version: 1,
@@ -237,14 +289,43 @@ export function CheckoutPage() {
               </label>
             </div>
 
-            <p className="checkout-moyasar-note">
-              الدفع يتم عبر <strong>Moyasar</strong> — بطاقات مدى وفيزا وماستركارد، Apple Pay،
-              وSTC Pay. لن تُخزّن بيانات البطاقة على موقعنا.
-            </p>
+            <div className="pay-method-wrap">
+              <p className="pay-method-label">طريقة الدفع</p>
+              <div className="pay-method-options">
+                <label className={`pay-method-option${payMethod === 'online' ? ' pay-method-option--active' : ''}`}>
+                  <input
+                    type="radio"
+                    name="payMethod"
+                    value="online"
+                    checked={payMethod === 'online'}
+                    onChange={() => setPayMethod('online')}
+                  />
+                  <span className="pay-method-option__icon">💳</span>
+                  <span>
+                    <strong>دفع إلكتروني</strong>
+                    <small>مدى · فيزا · Apple Pay · STC Pay</small>
+                  </span>
+                </label>
+                <label className={`pay-method-option${payMethod === 'cash' ? ' pay-method-option--active' : ''}`}>
+                  <input
+                    type="radio"
+                    name="payMethod"
+                    value="cash"
+                    checked={payMethod === 'cash'}
+                    onChange={() => setPayMethod('cash')}
+                  />
+                  <span className="pay-method-option__icon">💵</span>
+                  <span>
+                    <strong>كاش عند الاستلام</strong>
+                    <small>ادفع نقداً عند استلام طلبك</small>
+                  </span>
+                </label>
+              </div>
+            </div>
 
             <div className="checkout-form__actions">
-              <button type="submit" className="btn btn-primary btn-lg">
-                المتابعة للدفع
+              <button type="submit" className="btn btn-primary btn-lg" disabled={cashLoading}>
+                {cashLoading ? 'جاري إرسال الطلب…' : payMethod === 'cash' ? 'تأكيد الطلب' : 'المتابعة للدفع'}
               </button>
               <Link to="/cart" className="btn btn-ghost">
                 العودة للسلة

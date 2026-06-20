@@ -2206,3 +2206,63 @@ textarea {
   color: #fff;
 }
 
+/* ——— Payment method selector ——— */
+.pay-method-wrap {
+  margin: 1rem 0 0.5rem;
+}
+
+.pay-method-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.pay-method-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pay-method-option {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  background: var(--bg-card);
+}
+
+.pay-method-option input[type="radio"] {
+  display: none;
+}
+
+.pay-method-option--active {
+  border-color: var(--eva-gold);
+  background: color-mix(in srgb, var(--eva-gold) 8%, var(--bg-card));
+}
+
+.pay-method-option__icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.pay-method-option span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pay-method-option strong {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.pay-method-option small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
