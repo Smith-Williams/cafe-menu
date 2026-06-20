@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { MenuItem } from '../types/database'
 import { useCart } from '../context/CartContext'
 import { useSettings } from '../context/SettingsContext'
@@ -32,7 +33,7 @@ function MenuSkeleton() {
 }
 
 export function MenuPage() {
-  const { addItem } = useCart()
+  const { addItem, lines, subtotal } = useCart()
   const { settings } = useSettings()
   const [categories, setCategories] = useState<CategoryDisplay[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
@@ -188,6 +189,18 @@ export function MenuPage() {
       </section>
 
       <SiteFooter />
+
+      {lines.length > 0 ? (
+        <div className="floating-cart-bar">
+          <div className="floating-cart-bar__info">
+            <span className="floating-cart-bar__count">{lines.reduce((s, l) => s + l.quantity, 0)} صنف</span>
+            <span className="floating-cart-bar__total">{formatMoney(subtotal, currency)}</span>
+          </div>
+          <Link to="/cart" className="btn btn-primary floating-cart-bar__btn">
+            عرض السلة ←
+          </Link>
+        </div>
+      ) : null}
     </div>
   )
 }
