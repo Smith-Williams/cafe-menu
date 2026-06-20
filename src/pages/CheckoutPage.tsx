@@ -290,37 +290,38 @@ export function CheckoutPage() {
             </div>
 
             <div className="pay-method-wrap">
-              <p className="pay-method-label">طريقة الدفع</p>
-              <div className="pay-method-options">
-                <label className={`pay-method-option${payMethod === 'online' ? ' pay-method-option--active' : ''}`}>
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    value="online"
-                    checked={payMethod === 'online'}
-                    onChange={() => setPayMethod('online')}
-                  />
-                  <span className="pay-method-option__icon">💳</span>
-                  <span>
-                    <strong>دفع إلكتروني</strong>
-                    <small>مدى · فيزا · Apple Pay · STC Pay</small>
-                  </span>
-                </label>
-                <label className={`pay-method-option${payMethod === 'cash' ? ' pay-method-option--active' : ''}`}>
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    value="cash"
-                    checked={payMethod === 'cash'}
-                    onChange={() => setPayMethod('cash')}
-                  />
-                  <span className="pay-method-option__icon">💵</span>
-                  <span>
-                    <strong>كاش عند الاستلام</strong>
-                    <small>ادفع نقداً عند استلام طلبك</small>
-                  </span>
-                </label>
-              </div>
+              <p className="pay-method-label">اختر طريقة الدفع</p>
+
+              <label className={`pay-card-option${payMethod === 'online' ? ' pay-card-option--active' : ''}`}>
+                <input type="radio" name="payMethod" value="online" checked={payMethod === 'online'} onChange={() => setPayMethod('online')} />
+                <div className="pay-card-option__inner">
+                  <div className="pay-card-option__top">
+                    <span className="pay-card-option__title">الدفع الإلكتروني</span>
+                    {payMethod === 'online' && <span className="pay-card-option__check">✓</span>}
+                  </div>
+                  <div className="pay-badges">
+                    <span className="pay-badge pay-badge--apple">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                      Apple Pay
+                    </span>
+                    <span className="pay-badge pay-badge--mada">مدى</span>
+                    <span className="pay-badge pay-badge--visa">
+                      <svg viewBox="0 0 38 24" width="28" height="18"><rect width="38" height="24" rx="4" fill="#1a1f71"/><path d="M15.68 7.28L13.5 16.72h-2.44l2.18-9.44h2.44zm9.9 6.1l1.28-3.54.74 3.54h-2.02zm2.74 3.34H30.5l-1.82-9.44h-2.04c-.46 0-.85.27-1.02.68l-3.6 8.76h2.52l.5-1.38h3.08l.3 1.38zm-6.26-3.08c.01-2.45-3.38-2.58-3.36-3.68.01-.33.32-.68.1-.96-.26-.27-.68-.3-1.04-.3-1.1 0-2.18.3-3.1.84l.44 2.04c.72-.42 1.54-.72 2.38-.72.52 0 1.1.2 1.1.72 0 1.16-2.94 1.04-2.94 3.58 0 1.54 1.42 2.38 2.94 2.38.84 0 1.66-.2 2.4-.56l-.44-2.04c-.6.3-1.26.5-1.92.5-.48 0-1.04-.22-1.04-.72.01-.84 1.48-.98 2.48-1.08zM14.06 7.28l-3.88 9.44H7.6L5.72 9.1c-.1-.44-.2-.6-.54-.78C4.6 8.04 3.84 7.8 3.1 7.66l.06-.38h4.06c.52 0 .98.34 1.1.9l1 5.3 2.46-6.2h2.28z" fill="#fff"/></svg>
+                    </span>
+                    <span className="pay-badge pay-badge--stc">STC Pay</span>
+                  </div>
+                </div>
+              </label>
+
+              <label className={`pay-cash-option${payMethod === 'cash' ? ' pay-cash-option--active' : ''}`}>
+                <input type="radio" name="payMethod" value="cash" checked={payMethod === 'cash'} onChange={() => setPayMethod('cash')} />
+                <span className="pay-cash-option__dot" />
+                <span className="pay-cash-option__text">
+                  <strong>الدفع كاش عند الاستلام</strong>
+                  <small>ادفع نقداً عند استلام طلبك من الفرع</small>
+                </span>
+                {payMethod === 'cash' && <span className="pay-card-option__check">✓</span>}
+              </label>
             </div>
 
             <div className="checkout-form__actions">
