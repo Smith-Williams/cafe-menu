@@ -39,6 +39,7 @@ export function MenuPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeCategoryId, setActiveCategoryId] = useState<string | 'all'>('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -70,10 +71,20 @@ export function MenuPage() {
   const tabs = useMemo(() => buildCategoryTabs(categories), [categories])
 
   const visibleItems = useMemo(() => {
-    const base = items.filter((i) => i.available)
-    if (activeCategoryId === 'all') return base
-    return base.filter((i) => i.category_id === activeCategoryId)
-  }, [items, activeCategoryId])
+    let base = items.filter((i) => i.available)
+    if (activeCategoryId !== 'all') {
+      base = base.filter((i) => i.category_id === activeCategoryId)
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      base = base.filter(
+        (i) =>
+          (i.name_ar || '').toLowerCase().includes(q) ||
+          (i.description_ar || '').toLowerCase().includes(q)
+      )
+    }
+    return base
+  }, [items, activeCategoryId, search])
 
   const currency = settings.currency_code
 
@@ -111,10 +122,30 @@ export function MenuPage() {
           </>
         ) : (
           <>
+            <div className="menu-search-wrap">
+              <input
+                type="search"
+                className="menu-search"
+                placeholder="ابحث في القائمة…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="البحث في القائمة"
+              />
+              {search && (
+                <button
+                  className="menu-search-clear"
+                  onClick={() => setSearch('')}
+                  aria-label="مسح البحث"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             <CategoryTabs
               tabs={tabs}
               activeId={activeCategoryId}
-              onChange={setActiveCategoryId}
+              onChange={(id) => { setActiveCategoryId(id); setSearch('') }}
             />
 
             {visibleItems.length === 0 ? (

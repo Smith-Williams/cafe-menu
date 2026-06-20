@@ -36,27 +36,6 @@ on conflict (id) do update set
   emoji = excluded.emoji,
   icon = excluded.icon;
 
--- احتياط: أي فئة ناقصة (جدول قديم)
-insert into public.categories (id, name, name_ar, emoji, sort_order)
-select v.id, v.n, v.n, v.e, v.ord
-from (values
-  ('11111111-1111-1111-1111-111111111101'::uuid, 'مشروبات ساخنة', '☕', 1),
-  ('11111111-1111-1111-1111-111111111102'::uuid, 'مشروبات باردة', '🧊', 2),
-  ('11111111-1111-1111-1111-111111111103'::uuid, 'مخبوزات ووجبات', '🥐', 3),
-  ('11111111-1111-1111-1111-111111111104'::uuid, 'حلويات', '🍰', 4),
-  ('11111111-1111-1111-1111-111111111105'::uuid, 'إفطار', '🍳', 5)
-) as v(id, n, e, ord)
-where not exists (select 1 from public.categories c where c.id = v.id);
-
-update public.categories
-set name_ar = coalesce(nullif(trim(name_ar), ''), name),
-    icon = coalesce(nullif(trim(icon), ''), emoji)
-where id in (
-  '11111111-1111-1111-1111-111111111101','11111111-1111-1111-1111-111111111102',
-  '11111111-1111-1111-1111-111111111103','11111111-1111-1111-1111-111111111104',
-  '11111111-1111-1111-1111-111111111105'
-);
-
 -- فئات قديمة بنفس الاسم لكن id مختلف → احذفها إن كانت فارغة
 delete from public.categories c
 where c.id not in (

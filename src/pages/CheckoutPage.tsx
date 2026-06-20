@@ -22,6 +22,7 @@ export function CheckoutPage() {
   const currency = settings.currency_code
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [tableNo, setTableNo] = useState('')
   const [notes, setNotes] = useState('')
   const [step, setStep] = useState<Step>('details')
   const [error, setError] = useState<string | null>(null)
@@ -111,6 +112,12 @@ export function CheckoutPage() {
       setError('يرجى إدخال الاسم ورقم الجوال.')
       return
     }
+    // Saudi phone validation: 05xxxxxxxx or +9665xxxxxxxx
+    const saudiPhone = /^(05\d{8}|(\+966|00966)5\d{8})$/
+    if (!saudiPhone.test(trimmedPhone.replace(/\s/g, ''))) {
+      setError('رقم الجوال غير صحيح — مثال: 0512345678')
+      return
+    }
 
     if (halalas < 100) {
       setError('الحد الأدنى للدفع عبر Moyasar هو ١٫٠٠ ر.س.')
@@ -118,7 +125,8 @@ export function CheckoutPage() {
     }
 
     const userNotes = notes.trim()
-    const orderNotes = userNotes ? `${PICKUP_NOTE} | ${userNotes}` : PICKUP_NOTE
+    const tablePart = tableNo.trim() ? `طاولة ${tableNo.trim()}` : PICKUP_NOTE
+    const orderNotes = userNotes ? `${tablePart} | ${userNotes}` : tablePart
 
     const pending: PendingCheckout = {
       version: 1,
@@ -204,6 +212,17 @@ export function CheckoutPage() {
                   placeholder="05xxxxxxxx"
                   dir="ltr"
                   required
+                />
+              </label>
+              <label className="field">
+                <span className="field__label">رقم الطاولة (اختياري)</span>
+                <input
+                  type="text"
+                  className="field__input"
+                  value={tableNo}
+                  onChange={(e) => setTableNo(e.target.value)}
+                  placeholder="مثال: 5"
+                  inputMode="numeric"
                 />
               </label>
               <label className="field field--full">

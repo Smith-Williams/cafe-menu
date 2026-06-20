@@ -30,21 +30,27 @@ export interface Database {
         Row: {
           id: string
           name_ar: string
+          name?: string | null
           icon: string | null
+          emoji?: string | null
           sort_order: number
           created_at: string
         }
         Insert: {
           id?: string
-          name_ar: string
+          name_ar?: string
+          name?: string
           icon?: string | null
+          emoji?: string | null
           sort_order?: number
           created_at?: string
         }
         Update: {
           id?: string
           name_ar?: string
+          name?: string
           icon?: string | null
+          emoji?: string | null
           sort_order?: number
           created_at?: string
         }

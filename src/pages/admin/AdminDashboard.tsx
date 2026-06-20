@@ -13,6 +13,7 @@ import {
 } from '../../lib/normalizeOrder'
 import { ORDER_STATUSES, orderStatusLabel } from '../../lib/orderStatus'
 import { settingsDraftFrom, type CafeSettingsDraft } from '../../lib/cafeSettingsFields'
+import { writeCategory, writeMenuItem } from '../../lib/dbWrite'
 import { useOrderRealtime } from '../../hooks/useOrderRealtime'
 import { NewOrderToast } from '../../components/admin/NewOrderToast'
 import { OrderNotificationBell } from '../../components/admin/OrderNotificationBell'
@@ -223,23 +224,19 @@ export function AdminDashboard() {
   async function saveCategory(e: FormEvent) {
     e.preventDefault()
     setError(null)
-    const payload = {
-      name_ar: categoryDraft.name_ar.trim(),
-      icon: categoryDraft.icon.trim() || null,
-      sort_order: Number(categoryDraft.sort_order) || 0,
-    }
-    if (!payload.name_ar) return
+    const label = categoryDraft.name_ar.trim()
+    const icon = categoryDraft.icon.trim() || null
+    if (!label) return
 
-    if (categoryDraft.id) {
-      const { error: err } = await supabase
-        .from('categories')
-        .update(payload)
-        .eq('id', categoryDraft.id)
-      if (err) setError(err.message)
-    } else {
-      const { error: err } = await supabase.from('categories').insert(payload)
-      if (err) setError(err.message)
-    }
+    const { error: err } = await writeCategory(
+      {
+        name_ar: label,
+        icon,
+        sort_order: Number(categoryDraft.sort_order) || 0,
+      },
+      categoryDraft.id
+    )
+    if (err) setError(err)
     setCategoryModal(false)
     void load()
   }
@@ -281,39 +278,25 @@ export function AdminDashboard() {
       return
     }
 
-    const payload = {
-      category_id: itemDraft.category_id,
-      name_ar: itemDraft.name_ar.trim(),
-      description_ar: itemDraft.description_ar.trim() || null,
-      price: priceNum,
-      image_url: itemDraft.image_url.trim() || null,
-      available: itemDraft.available,
-      sort_order: Number(itemDraft.sort_order) || 0,
-    }
-
-    if (itemDraft.id) {
-      const { error: err } = await supabase
-        .from('items')
-        .update(payload)
-        .eq('id', itemDraft.id)
-      if (err) {
-        setError(
-          err.message.includes('items_category_name_unique')
-            ? 'يوجد عنصر بنفس الاسم في هذه الفئة. غيّر الاسم أو عدّل العنصر الموجود.'
-            : err.message
-        )
-        return
-      }
-    } else {
-      const { error: err } = await supabase.from('items').insert(payload)
-      if (err) {
-        setError(
-          err.message.includes('items_category_name_unique')
-            ? 'يوجد عنصر بنفس الاسم في هذه الفئة مسبقاً.'
-            : err.message
-        )
-        return
-      }
+    const { error: err } = await writeMenuItem(
+      {
+        category_id: itemDraft.category_id,
+        name_ar: itemDraft.name_ar.trim(),
+        description_ar: itemDraft.description_ar.trim() || null,
+        price: priceNum,
+        image_url: itemDraft.image_url.trim() || null,
+        available: itemDraft.available,
+        sort_order: Number(itemDraft.sort_order) || 0,
+      },
+      itemDraft.id
+    )
+    if (err) {
+      setError(
+        err.includes('items_category_name_unique')
+          ? 'يوجد عنصر بنفس الاسم في هذه الفئة مسبقاً.'
+          : err
+      )
+      return
     }
     setItemModal(false)
     void load()
@@ -513,6 +496,16 @@ export function AdminDashboard() {
                             {orderStatusLabel(status)}
                           </button>
                         ))}
+                        {order.customer_phone ? (
+                          <a
+                            href={`https://wa.me/${order.customer_phone.replace(/[^0-9]/g, '').replace(/^0/, '966')}?text=${encodeURIComponent(`مرحباً ${order.customer_name}، طلبك جاهز من EVA Coffee 🎉`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="wa-notify-btn"
+                          >
+                            💬 واتساب
+                          </a>
+                        ) : null}
                       </div>
                     </article>
                   ))}
