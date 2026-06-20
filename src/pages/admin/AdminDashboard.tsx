@@ -17,8 +17,9 @@ import { writeCategory, writeMenuItem } from '../../lib/dbWrite'
 import { useOrderRealtime } from '../../hooks/useOrderRealtime'
 import { NewOrderToast } from '../../components/admin/NewOrderToast'
 import { OrderNotificationBell } from '../../components/admin/OrderNotificationBell'
+import { AnalyticsPanel } from '../../components/admin/AnalyticsPanel'
 
-type AdminTab = 'orders' | 'items' | 'categories' | 'settings'
+type AdminTab = 'orders' | 'analytics' | 'items' | 'categories' | 'settings'
 
 type CategoryDraft = {
   id?: string
@@ -54,9 +55,10 @@ function emptyItem(categoryId: string): ItemDraft {
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: 'orders', label: 'الطلبات' },
-  { id: 'items', label: 'عناصر القائمة' },
+  { id: 'analytics', label: 'الإحصاءات' },
+  { id: 'items', label: 'القائمة' },
   { id: 'categories', label: 'الفئات' },
-  { id: 'settings', label: 'إعدادات EVA' },
+  { id: 'settings', label: 'الإعدادات' },
 ]
 
 export function AdminDashboard() {
@@ -510,6 +512,19 @@ export function AdminDashboard() {
                     </article>
                   ))}
                 </div>
+              )}
+            </section>
+          ) : null}
+
+          {tab === 'analytics' ? (
+            <section className="panel admin-panel">
+              <header className="admin-panel__head">
+                <h2>الإحصاءات والأداء</h2>
+              </header>
+              {orders.length === 0 ? (
+                <p className="empty-state">لا توجد طلبات بعد — ستظهر الإحصاءات هنا بعد أول طلب.</p>
+              ) : (
+                <AnalyticsPanel orders={orders} currency={currency} />
               )}
             </section>
           ) : null}
