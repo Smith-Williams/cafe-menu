@@ -1,10 +1,13 @@
+import { memo, Suspense } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useSettings } from '../context/SettingsContext'
 import { EVA_BRAND } from '../lib/brand'
+import { ErrorBoundary } from './ErrorBoundary'
+import { RouteFallback } from './RouteFallback'
 
-function CartIcon() {
+const CartIcon = memo(function CartIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M6 6h15l-1.5 9h-12z" />
@@ -13,7 +16,7 @@ function CartIcon() {
       <path d="M6 6L5 3H2" />
     </svg>
   )
-}
+})
 
 export function Layout() {
   const { totalQuantity, addedToast, dismissToast } = useCart()
@@ -92,7 +95,11 @@ export function Layout() {
       </header>
 
       <main key={location.pathname} className="page-transition">
-        <Outlet />
+        <ErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   )
